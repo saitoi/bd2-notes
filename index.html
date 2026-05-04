@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BD2 — NoSQL, NewSQL e In-Memory DB</title>
+  <style>
+    body { font-family: Georgia, serif; font-size: 16px; color: #000; background: #fff; max-width: 900px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1 { font-size: 1.8em; border-bottom: 2px solid #000; padding-bottom: 6px; margin-top: 40px; }
+    h2 { font-size: 1.4em; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 32px; }
+    h3 { font-size: 1.1em; margin-top: 24px; }
+    h4 { font-size: 1em; margin-top: 16px; }
+    code { font-family: monospace; background: #f4f4f4; padding: 1px 4px; border-radius: 2px; }
+    pre { background: #f4f4f4; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.9em; line-height: 1.4; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 0.9em; }
+    th, td { border: 1px solid #aaa; padding: 6px 10px; text-align: left; }
+    th { background: #f0f0f0; font-weight: bold; }
+    .box { border: 1px solid #888; padding: 10px 14px; margin: 12px 0; border-radius: 2px; }
+    .term { font-weight: bold; }
+    .note { font-style: italic; color: #333; font-size: 0.95em; }
+    .diagram { font-family: monospace; font-size: 0.88em; background: #fafafa; border: 1px solid #ccc; padding: 12px; line-height: 1.5; overflow-x: auto; white-space: pre; }
+    ul, ol { margin: 8px 0; padding-left: 24px; }
+    li { margin: 3px 0; }
+    details { border: 1px solid #ccc; border-radius: 2px; padding: 6px 10px; margin: 8px 0; }
+    summary { cursor: pointer; font-weight: bold; }
+    nav a { margin-right: 14px; font-size: 0.9em; }
+    .toc { background: #f9f9f9; border: 1px solid #ccc; padding: 12px 20px; margin-bottom: 32px; }
+    .toc ul { margin: 4px 0; }
+    .toc li { margin: 2px 0; }
+    .caps { font-variant: small-caps; }
+    .center { text-align: center; }
+  </style>
+</head>
+<body>
+
+<h1>Modelos e Arquiteturas de Armazenamento de Grandes Volumes de Dados — NoSQL, NewSQL e In-Memory DB</h1>
+
+<nav class="toc">
+  <strong>Sumário</strong>
+  <ul>
+    <li><a href="#evolucao">1. Evolução dos Bancos de Dados</a></li>
+    <li><a href="#bigdata">2. Big Data</a></li>
+    <li><a href="#nosql">3. NoSQL</a>
+      <ul>
+        <li><a href="#nosql-caracteristicas">3.1 Características Gerais</a></li>
+        <li><a href="#nosql-modelos">3.2 Modelos de Dados</a></li>
+        <li><a href="#nosql-agregados">3.3 Agregados</a></li>
+        <li><a href="#nosql-distribuicao">3.4 Distribuição de Dados</a></li>
+        <li><a href="#nosql-consistencia">3.5 Consistência, CAP e BASE</a></li>
+        <li><a href="#nosql-polystores">3.6 Persistência Poliglota</a></li>
+        <li><a href="#chave-valor">3.7 Chave-Valor</a></li>
+        <li><a href="#documentos">3.8 Documentos</a></li>
+        <li><a href="#colunas">3.9 Família de Colunas</a></li>
+        <li><a href="#grafos">3.10 Grafos</a></li>
+        <li><a href="#mapreduce">3.11 MapReduce</a></li>
+      </ul>
+    </li>
+    <li><a href="#newsql">4. NewSQL</a>
+      <ul>
+        <li><a href="#htap">4.1 HTAP</a></li>
+        <li><a href="#newsql-taxonomia">4.2 Taxonomia</a></li>
+        <li><a href="#newsql-sabores">4.3 Sabores do NewSQL</a></li>
+      </ul>
+    </li>
+    <li><a href="#imdb">5. Banco de Dados In-Memory (IMDB)</a>
+      <ul>
+        <li><a href="#imdb-conceitos">5.1 Conceitos Principais</a></li>
+        <li><a href="#imdb-mvcc">5.2 MVCC e Controle de Concorrência</a></li>
+        <li><a href="#imdb-falhas">5.3 Recuperação de Falhas</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+<!-- ============================================================ -->
+<h1 id="evolucao">1. Evolução dos Bancos de Dados</h1>
+
+<p>Os SGBDs evoluíram em resposta às mudanças nas máquinas (RAM, disco, processadores), nos ambientes (arquitetura, redes) e nos tipos de carga de trabalho (<span class="term">workload</span>).</p>
+
+<div class="diagram">LINHA DO TEMPO
+
+   Anos 60–70   ──▶  Bancos de dados de rede e hierárquicos
+   Anos 70–hoje ──▶  Banco de dados relacional  (OLTP / OLAP / SQL)
+   Anos 90–hoje ──▶  Banco de dados orientado a colunas
+   Anos 00–hoje ──▶  Banco de dados orientado a documentos (NoSQL)
+                     Banco de dados de grafos
+                     Banco de dados distribuídos
+   Anos 10–hoje ──▶  Banco de dados in-memory  (NewSQL)
+                     Bancos paralelos e distribuídos de nova geração</div>
+
+<details>
+  <summary>Termos: OLTP e OLAP</summary>
+  <p><span class="term">OLTP (Online Transaction Processing)</span> — cargas de trabalho transacionais: muitas escritas e leituras pontuais, curtas e concorrentes. Ex.: sistema de caixa, e-commerce.</p>
+  <p><span class="term">OLAP (Online Analytical Processing)</span> — cargas analíticas: poucas consultas mas muito complexas, varrendo grandes volumes de dados. Ex.: relatórios de BI, data warehouse.</p>
+</details>
+
+<p>A motivação principal para o surgimento do NoSQL e NewSQL foi a inadequação dos SGBDr tradicionais para dois novos requisitos:</p>
+<ul>
+  <li><strong>Necessidade de maior desempenho</strong> em aplicações de Big Data e Web 2.0.</li>
+  <li><strong>Necessidade de maior flexibilidade</strong> no schema e no modelo de dados.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h1 id="bigdata">2. Big Data</h1>
+
+<p>Big Data é um conjunto de dados caracterizado por um ou mais dos chamados <strong>V's</strong>:</p>
+
+<table>
+  <tr><th>V</th><th>Descrição</th></tr>
+  <tr><td>Volume</td><td>Quantidade massiva de dados (TB a ZB)</td></tr>
+  <tr><td>Velocidade</td><td>Alta taxa de geração e processamento em tempo real</td></tr>
+  <tr><td>Variedade</td><td>Múltiplos formatos: estruturado, semiestruturado, não-estruturado</td></tr>
+  <tr><td>Veracidade</td><td>Grau de confiabilidade e qualidade dos dados</td></tr>
+  <tr><td>Variabilidade</td><td>Inconsistência no fluxo de dados ao longo do tempo</td></tr>
+  <tr><td>Valor</td><td>Utilidade efetiva extraída dos dados</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h1 id="nosql">3. NoSQL <span class="note">("Not Only SQL")</span></h1>
+
+<h2 id="nosql-caracteristicas">3.1 Características Gerais</h2>
+
+<p>Bancos NoSQL foram desenvolvidos para se adequar às demandas da Web moderna, Big Data e ambientes distribuídos. <strong>Não seguem</strong> os princípios ACID dos SGBDr e operam segundo o Teorema CAP.</p>
+
+<details>
+  <summary>Termos: ACID</summary>
+  <p><span class="term">ACID</span> é o conjunto de propriedades que garante a confiabilidade de transações em SGBDr tradicionais:</p>
+  <ul>
+    <li><strong>Atomicity (Atomicidade)</strong> — uma transação executa por inteiro ou não executa. Nunca a meio.</li>
+    <li><strong>Consistency (Consistência)</strong> — uma transação leva o banco de um estado válido a outro estado válido, respeitando todas as restrições.</li>
+    <li><strong>Isolation (Isolamento)</strong> — transações concorrentes não interferem umas nas outras; o resultado final é equivalente à execução serial.</li>
+    <li><strong>Durability (Durabilidade)</strong> — após confirmada (<em>commit</em>), a transação persiste mesmo em caso de falha de sistema.</li>
+  </ul>
+</details>
+
+<p>Principais características:</p>
+<ul>
+  <li><strong>Escalabilidade horizontal</strong> — adicionar mais nós à medida que o volume cresce, em vez de apenas melhorar o hardware de um único servidor (<em>escala vertical</em>).</li>
+  <li><strong>Schemaless</strong> — sem esquema predefinido; estrutura dos dados pode variar entre registros.</li>
+  <li>Sem relacionamentos explícitos (chaves estrangeiras) e sem transações entre múltiplos agregados.</li>
+  <li>Linguagem de consulta menos poderosa que SQL; acesso geralmente via API.</li>
+  <li>Suporte a replicação <strong>mestre-escravo</strong> e <strong>ponto a ponto (P2P)</strong>.</li>
+  <li>Suporte a <strong>particionamento horizontal (sharding)</strong>.</li>
+  <li>Orientado a <strong>agregados de dados</strong> (exceto grafos).</li>
+  <li>Seguem princípios CAP e BASE — <em>consistência eventual</em> no lugar de consistência imediata.</li>
+</ul>
+
+<h2 id="nosql-modelos">3.2 Modelos de Dados NoSQL</h2>
+
+<table>
+  <tr><th>Modelo</th><th>Unidade de dados</th><th>Exemplos</th></tr>
+  <tr><td>Chave-Valor</td><td>Par &lt;chave, valor opaco&gt;</td><td>Redis, DynamoDB, Riak</td></tr>
+  <tr><td>Documentos</td><td>Par &lt;chave, documento JSON/BSON&gt;</td><td>MongoDB, CouchDB, Couchbase</td></tr>
+  <tr><td>Família de Colunas</td><td>Par &lt;chave, família de colunas&gt;</td><td>Bigtable, HBase, Cassandra</td></tr>
+  <tr><td>Grafos</td><td>Vértices + arestas + pares chave-valor</td><td>Neo4j, Giraph</td></tr>
+  <tr><td>Outros</td><td>Objetos, XML</td><td>—</td></tr>
+</table>
+
+<p class="note">Todos os modelos acima — exceto grafos — são orientados a agregados.</p>
+
+<h2 id="nosql-agregados">3.3 Agregados</h2>
+
+<p>Um <span class="term">agregado</span> é uma coleção de objetos relacionados tratados como uma única unidade de dados nos sistemas NoSQL. É o equivalente, no NoSQL, ao conceito de "entidade com todos os seus atributos aninhados".</p>
+
+<p>Propriedades:</p>
+<ul>
+  <li>Estrutura mais complexa que uma tupla relacional.</li>
+  <li>Modificações são operações <strong>atômicas</strong>.</li>
+  <li>Unidade natural de replicação e particionamento.</li>
+  <li>Facilita o funcionamento em clusters: o agregado sinaliza quais dados devem estar no mesmo nó, minimizando transferências de rede.</li>
+  <li>Reduz a <span class="term">incompatibilidade de impedância</span> — a estrutura aninhada de um agregado é mais próxima dos objetos em memória do que tabelas relacionais, facilitando a manipulação pelas aplicações.</li>
+</ul>
+
+<details>
+  <summary>Termo: Impedância (Impedance Mismatch)</summary>
+  <p>No modelo relacional os dados são representados como tabelas de linhas, enquanto as aplicações trabalham com objetos (classes, structs). O esforço de mapear entre esses dois mundos é chamado de <strong>impedância</strong>. Agregados NoSQL resolvem parcialmente esse problema porque sua estrutura hierárquica (JSON/BSON) reflete diretamente a estrutura dos objetos da aplicação.</p>
+</details>
+
+<p>Exemplo de agregado (pedido de e-commerce):</p>
+<pre>{
+  "_id": "pedido_1001",
+  "data": "2026-05-02",
+  "cliente": {
+    "nome": "João Silva",
+    "email": "joao@email.com"
+  },
+  "itens": [
+    { "produto": "Notebook", "preco": 3500.00 },
+    { "produto": "Mouse",    "preco": 50.00 }
+  ],
+  "endereco_entrega": {
+    "rua": "Rua A",
+    "cidade": "Rio de Janeiro"
+  }
+}</pre>
+
+<h3>Problemas dos Agregados</h3>
+<ul>
+  <li><strong>Sem integridade referencial</strong> — não há equivalente a chave estrangeira entre agregados distintos.</li>
+  <li><strong>Opacidade para o sistema</strong> — o NoSQL não consegue usar a estrutura interna do agregado para decisões de replicação e fragmentação automáticas.</li>
+  <li><strong>Sem atomicidade entre múltiplos agregados</strong> — transações ACID se limitam a um único agregado; não há transações cross-aggregate.</li>
+  <li><strong>Reflete o acesso, não os dados intrínsecos</strong> — o agregado é modelado conforme a aplicação acessa os dados; se houver necessidade de acessar os mesmos dados de formas diferentes, o modelo pode se tornar inadequado.</li>
+</ul>
+
+<h2 id="nosql-distribuicao">3.4 Modelos de Distribuição de Dados</h2>
+
+<p>Dados podem ser distribuídos em múltiplos nós por meio de duas estratégias ortogonais, que podem ser combinadas:</p>
+
+<div class="diagram">┌─────────────────────────────────────────────┐
+│          DISTRIBUIÇÃO DE DADOS               │
+│                                              │
+│  Fragmentação          Replicação            │
+│  (sharding)            (cópias)              │
+│  dados diferentes  +   mesmos dados          │
+│  em nós diferentes     em múltiplos nós      │
+│                                              │
+│  ──────────────────────────────────────────  │
+│      Fragmentação + Replicação combinadas    │
+└─────────────────────────────────────────────┘</div>
+
+<h3>Fragmentação (Sharding)</h3>
+<p>Dados diferentes são armazenados em nós diferentes. No NoSQL, a fragmentação ocorre no nível dos <strong>agregados</strong>.</p>
+
+<details>
+  <summary>Termo: Sharding (Particionamento Horizontal)</summary>
+  <p><span class="term">Sharding</span> é a divisão de uma coleção de dados em partes menores (<em>shards</em>) distribuídas entre vários servidores. Cada servidor é responsável apenas por um subconjunto dos dados, distribuindo a carga de leitura e escrita. No mundo relacional, o equivalente é a fragmentação horizontal — dividir uma tabela por linhas entre servidores. O sharding aumenta a escalabilidade horizontal mas não oferece resiliência por si só: se um nó falhar e não houver réplica, os dados nele contidos ficam indisponíveis.</p>
+</details>
+
+<p>Princípios de fragmentação de agregados:</p>
+<ul>
+  <li><strong>Localidade geográfica</strong> — dados ficam nos nós onde são mais consumidos, reduzindo latência de rede.</li>
+  <li><strong>Equilíbrio de carga</strong> — dados distribuídos para equilibrar a sobrecarga entre os nós.</li>
+  <li><strong>Fragmentação lógica</strong> — a aplicação define como os dados são distribuídos pelos nós do cluster.</li>
+  <li><strong>Autofragmentação nativa</strong> — o próprio banco gerencia a alocação e redistribuição de fragmentos automaticamente.</li>
+</ul>
+
+<p>Fragmentação no modelo relacional (referência):</p>
+<ul>
+  <li><strong>Horizontal (sharding)</strong> — divide a tabela por linhas entre servidores; útil para alto volume e distribuição de carga.</li>
+  <li><strong>Vertical</strong> — divide a tabela por colunas; útil para otimizar I/O em consultas que acessam poucos atributos.</li>
+</ul>
+
+<h3>Replicação</h3>
+<p>Os mesmos dados são copiados para múltiplos nós, aumentando disponibilidade e resiliência.</p>
+
+<table>
+  <tr><th></th><th>Mestre-Escravo</th><th>Ponto a Ponto (P2P)</th></tr>
+  <tr><td><strong>Estrutura</strong></td><td>Um nó mestre (primário), demais são escravos (cópias)</td><td>Todos os nós têm o mesmo peso</td></tr>
+  <tr><td><strong>Leitura</strong></td><td>Escravos ampliam capacidade de leitura</td><td>Qualquer nó atende leituras e escritas</td></tr>
+  <tr><td><strong>Escrita</strong></td><td>Apenas o mestre; gargalo em writes</td><td>Qualquer nó; alta escalabilidade de escrita</td></tr>
+  <tr><td><strong>Resiliência</strong></td><td>Escravos assumem se mestre falhar</td><td>Perda de nó não afeta disponibilidade</td></tr>
+  <tr><td><strong>Risco</strong></td><td>Inconsistência se réplica não for propagada antes da falha</td><td>Inconsistência se o mesmo dado for atualizado em nós diferentes simultaneamente</td></tr>
+</table>
+
+<p>Propagação no modelo mestre-escravo:</p>
+<ul>
+  <li><strong>Síncrona</strong> — mestre aguarda confirmação dos escravos antes de confirmar o commit; garante consistência, mas aumenta latência.</li>
+  <li><strong>Assíncrona</strong> — mestre confirma o commit sem aguardar os escravos; menor latência, mas aceita <em>consistência eventual</em> — a leitura pode retornar uma versão antiga do dado até que a réplica seja propagada.</li>
+</ul>
+
+<h2 id="nosql-consistencia">3.5 Consistência, Teorema CAP e BASE</h2>
+
+<h3>Conflitos de Consistência</h3>
+<p>Sem controles rígidos de transação, dois tipos de conflitos podem ocorrer em sistemas distribuídos:</p>
+<ul>
+  <li><strong>Conflito escrita-escrita</strong> — dois clientes escrevem sobre o mesmo agregado simultaneamente.</li>
+  <li><strong>Conflito leitura-escrita</strong> — um cliente lê um dado inconsistente de um nó enquanto outro nó ainda está sendo atualizado (causas: latência, erros de rede, sobrecarga).</li>
+</ul>
+
+<h3>Estratégias de Resolução</h3>
+<ul>
+  <li><strong>Pessimista</strong> — previne o conflito antecipadamente:
+    <ol>
+      <li>Bloqueia o agregado durante a operação (<em>lock</em>).</li>
+      <li>Grava as duas versões conflitantes e deixa o usuário/sistema decidir qual usar.</li>
+    </ol>
+  </li>
+  <li><strong>Otimista</strong> — assume que conflitos são raros; detecta e trata o conflito após o fato.</li>
+</ul>
+
+<h3>Mecanismos NoSQL para Conflitos</h3>
+
+<h4>Locks (Bloqueios)</h4>
+<p>Bloqueios no nível de agregado — podem ser locais (dentro de um nó) ou globais (cluster). Um lock garante acesso exclusivo ao agregado durante a operação, evitando leituras ou escritas concorrentes no mesmo dado.</p>
+
+<h4>MVCC — Multiversion Concurrency Control</h4>
+<details open>
+  <summary>O que é MVCC?</summary>
+  <p><span class="term">MVCC (Controle de Concorrência por Múltiplas Versões)</span> é um mecanismo que mantém múltiplas versões de um mesmo dado simultaneamente, em vez de sobrescrever o valor diretamente. A ideia central é: <strong>leituras nunca bloqueiam escritas, e escritas nunca bloqueiam leituras</strong>.</p>
+  <p>Funcionamento básico:</p>
+  <ol>
+    <li>Cada escrita cria uma <em>nova versão</em> do dado, em vez de modificar o original.</li>
+    <li>Leituras enxergam a versão mais recente <em>confirmada</em> no momento em que a transação começou — independentemente de escritas concorrentes que ainda não foram confirmadas.</li>
+    <li>Versões antigas são removidas pelo processo de <strong>garbage collection</strong> quando não são mais necessárias por nenhuma transação ativa.</li>
+  </ol>
+  <p>Variantes:</p>
+  <ul>
+    <li><strong>MVCC otimista</strong> (ex.: Hekaton, HyPer) — sem locks durante a transação; conflito é verificado apenas no final (<em>commit</em>). Se houver conflito, todas as transações menos uma são abortadas.</li>
+    <li><strong>MVCC pessimista</strong> (ex.: SAP HANA) — usa versões para leituras mas aplica locks de registro para escritas, garantindo consistência mais forte.</li>
+  </ul>
+  <p>A <strong>desvantagem</strong> do MVCC é a sobrecarga de criar e gerenciar múltiplas versões na memória, além do custo do garbage collection para remover versões obsoletas.</p>
+</details>
+
+<h3>Teorema CAP</h3>
+<p>Proposto por Brewer (2000), o teorema afirma que um sistema distribuído só pode garantir <strong>duas</strong> das três propriedades a seguir simultaneamente:</p>
+
+<div class="diagram">              Consistência (C)
+                    /\
+                   /  \
+                  /    \
+                 / CP   \
+                /   ──   \
+               /  CA  AP  \
+              /______________\
+    Disponibilidade (A)   Tolerância a Partições (P)</div>
+
+<table>
+  <tr><th>Propriedade</th><th>Descrição</th></tr>
+  <tr><td><strong>Consistência (C)</strong></td><td>Todos os clientes veem exatamente os mesmos dados ao mesmo tempo, em qualquer nó do cluster.</td></tr>
+  <tr><td><strong>Disponibilidade (A)</strong></td><td>Todo nó ativo responde requisições dos clientes sem falha.</td></tr>
+  <tr><td><strong>Tolerância a Partições (P)</strong></td><td>O cluster continua funcionando mesmo que a comunicação entre alguns nós falhe (partição de rede / <em>split brain</em>).</td></tr>
+</table>
+
+<details>
+  <summary>Termo: Split Brain</summary>
+  <p><span class="term">Split brain</span> ocorre quando uma falha de rede divide o cluster em dois (ou mais) grupos de nós que não conseguem mais se comunicar entre si. Cada grupo continua atendendo requisições de forma independente, podendo levar a versões divergentes dos mesmos dados. É um dos problemas mais graves em sistemas distribuídos e motivou o surgimento do teorema CAP.</p>
+</details>
+
+<p>Classificação de sistemas NoSQL sob o CAP:</p>
+<ul>
+  <li><strong>CA</strong> — consistência + disponibilidade (sem tolerância a partições): não é viável em sistemas verdadeiramente distribuídos.</li>
+  <li><strong>CP</strong> — consistência + tolerância a partições: em caso de partição, alguns nós ficam indisponíveis para garantir consistência.</li>
+  <li><strong>AP</strong> — disponibilidade + tolerância a partições: em caso de partição, retorna dados possivelmente desatualizados, mas sempre responde.</li>
+</ul>
+
+<h3>Propriedades BASE</h3>
+<p>Alternativa ao ACID para sistemas NoSQL, as propriedades BASE descrevem um modelo mais flexível:</p>
+<table>
+  <tr><th>Sigla</th><th>Nome</th><th>Significado</th></tr>
+  <tr><td><strong>B</strong>A</td><td>Basically Available</td><td>O sistema garante disponibilidade dos dados via replicação nos nós — em algum momento os dados estarão disponíveis.</td></tr>
+  <tr><td>B<strong>S</strong></td><td>Soft State</td><td>O estado do sistema pode mudar ao longo do tempo mesmo sem novas entradas, por causa da propagação de réplicas. A consistência não é garantida a todo instante.</td></tr>
+  <tr><td>BA<strong>SE</strong></td><td>Eventually Consistent</td><td>O sistema se tornará consistente em algum momento do futuro — não há garantia de quando, mas há garantia de que convergirá.</td></tr>
+</table>
+
+<h2 id="nosql-polystores">3.6 Persistência Poliglota (Polystores)</h2>
+
+<p>A <span class="term">persistência poliglota</span> é a prática de usar diferentes sistemas de armazenamento para diferentes tipos de dados de uma mesma aplicação, escolhendo o banco mais adequado para cada problema.</p>
+
+<p>Um <span class="term">polystore</span> é um sistema que integra múltiplos bancos heterogêneos sob uma interface unificada:</p>
+<ul>
+  <li>Um <strong>Query Engine</strong> recebe a consulta (Q) e a decompõe em <em>subconsultas</em> (SQ) direcionadas a cada sistema.</li>
+  <li><strong>Wrappers</strong> traduzem cada SQ para a linguagem nativa (Q') do banco de destino (SQL, Cypher, API REST, etc.) e integram os resultados.</li>
+</ul>
+
+<div class="diagram">Aplicação
+    │
+    ▼
+Query Engine ──▶ SQ₁ ──▶ [Wrapper SQL]  ──▶ SGBDr
+                 SQ₂ ──▶ [Wrapper JSON] ──▶ MongoDB
+                 SQ₃ ──▶ [Wrapper HDFS] ──▶ Hadoop
+    │
+    ▼
+Resultado integrado</div>
+
+<p>Graus de acoplamento: baixo, alto ou híbrido. Exemplos: CloudMDSQL, PolyBase, SparkSQL, HadoopDB.</p>
+
+<!-- ============================================================ -->
+<h2 id="chave-valor">3.7 NoSQL — Chave-Valor</h2>
+
+<p>Modelo mais simples do NoSQL: pares <code>&lt;chave, valor&gt;</code> onde o valor pode ser qualquer estrutura de dados.</p>
+
+<h3>Características</h3>
+<ul>
+  <li>O agregado é <strong>opaco</strong> — o valor é armazenado como um <em>BLOB</em> (Binary Large Object); o banco não enxerga a estrutura interna.</li>
+  <li>Acesso sempre pela chave; <strong>sem índices secundários</strong>.</li>
+  <li>Altamente particionável; depósito de dados implementado como <strong>tabela hash</strong>.</li>
+  <li>Máxima escalabilidade horizontal entre os modelos NoSQL.</li>
+</ul>
+
+<details>
+  <summary>Termo: Tabela Hash</summary>
+  <p>Uma <span class="term">tabela hash</span> (ou hash map) é uma estrutura de dados que mapeia chaves a valores em tempo médio O(1) — ou seja, o tempo de acesso é constante independentemente do tamanho da tabela. A chave é transformada por uma função de hash que determina a posição onde o valor será armazenado. Isso torna os bancos chave-valor extremamente eficientes para leituras e escritas pontuais.</p>
+</details>
+
+<h3>Operações</h3>
+<pre>insert(chave, valor)
+fetch(chave)          → recupera o valor pela chave
+update(chave, valor)
+delete(chave)</pre>
+
+<h3>Exemplo</h3>
+<table>
+  <tr><th>Chave</th><th>Valor</th></tr>
+  <tr><td><code>16</code></td><td><code>título="NoSQL essencial"; ano="2014"; autor="Fowler"</code></td></tr>
+  <tr><td><code>Serra</code></td><td><code>altura="1,80"; nascimento="06-10-1970"</code></td></tr>
+  <tr><td><code>100</code></td><td><code>título="Barbie"; ano="2023"; gênero="fantasia"</code></td></tr>
+</table>
+
+<p><strong>Exemplos de implementações:</strong> Riak, Redis, Apache Cassandra, Amazon DynamoDB, Voldemort.</p>
+
+<!-- ============================================================ -->
+<h2 id="documentos">3.8 NoSQL — Documentos</h2>
+
+<p>Evolução do modelo chave-valor: o valor é um <strong>documento estruturado</strong> (JSON, BSON, XML) que o banco consegue inspecionar e indexar.</p>
+
+<details>
+  <summary>Termos: JSON, BSON, DSE</summary>
+  <p><span class="term">JSON (JavaScript Object Notation)</span> — formato de texto para representar objetos estruturados como pares chave-valor aninhados. Legível por humanos e muito usado em APIs Web.</p>
+  <p><span class="term">BSON (Binary JSON)</span> — versão binária do JSON usada pelo MongoDB. Mais eficiente para armazenamento e transmissão que o JSON puro; suporta tipos de dados adicionais como datas e binários.</p>
+  <p><span class="term">DSE (Document Store Encoding)</span> — termo genérico para qualquer formato de serialização de documentos: JSON, BSON, XML, MessagePack, etc.</p>
+</details>
+
+<h3>Características</h3>
+<ul>
+  <li>Documentos são <strong>árvores hierárquicas autodescritivas</strong>; podem conter documentos aninhados.</li>
+  <li>O banco <strong>enxerga a estrutura interna</strong> do documento (não é opaco).</li>
+  <li>Permite <strong>índices secundários</strong> sobre campos do documento.</li>
+  <li>Permite recuperar <strong>partes</strong> do documento sem carregar o agregado inteiro.</li>
+  <li>Documentos de uma mesma coleção podem ter <strong>estruturas distintas</strong>.</li>
+  <li>Sem bloqueios explícitos — consistência <strong>mais fraca</strong> que chave-valor.</li>
+  <li>Altamente particionáveis; suportam escalabilidade horizontal.</li>
+</ul>
+
+<p><strong>Exemplos de implementações:</strong> MongoDB, Couchbase, CouchDB.</p>
+
+<!-- ============================================================ -->
+<h2 id="colunas">3.9 NoSQL — Família de Colunas</h2>
+
+<p>Pares <code>&lt;chave, família de colunas&gt;</code>. Cada linha tem uma chave e um conjunto de colunas, mas diferentes linhas podem ter colunas diferentes.</p>
+
+<div class="diagram">     chave da linha │  família "customer"      │  família "orders"
+  ──────────────────┼──────────────────────────┼──────────────────────
+      cliente_001   │  col: nome="João"         │  col: pedido_id="P1"
+                    │  col: cidade="RJ"         │  col: valor=3550.00
+      cliente_002   │  col: nome="Maria"        │  (sem pedidos)
+                    │  col: email="m@x.com"     │</div>
+
+<h3>Características</h3>
+<ul>
+  <li>Uma coluna pode ser uma <strong>supercoluna</strong> — um contêiner para outras colunas.</li>
+  <li>Uma <strong>família de colunas</strong> agrupa colunas geralmente acessadas juntas (equivalente a uma "tabela larga").</li>
+  <li>Altíssima escalabilidade: possível dividir tanto linhas quanto colunas em múltiplos nós.</li>
+  <li>Divisão de linhas por <strong>faixa de valores</strong> (range-based), não por hash — mais eficiente para buscas por intervalo de chaves.</li>
+</ul>
+
+<p><strong>Exemplos de implementações:</strong> Google Bigtable (precursor), HBase (sobre HDFS), MonetDB.</p>
+
+<!-- ============================================================ -->
+<h2 id="grafos">3.10 NoSQL — Grafos</h2>
+
+<p>Modelo baseado em <strong>vértices</strong> (nós/entidades) e <strong>arestas</strong> (relacionamentos), com pares chave-valor como propriedades de ambos.</p>
+
+<div class="diagram">  (Pessoa: João) ──[AMIGO_DE]──▶ (Pessoa: Maria)
+        │                                  │
+   [MORA_EM]                          [TRABALHA_EM]
+        │                                  │
+        ▼                                  ▼
+  (Cidade: RJ)                    (Empresa: TechCorp)</div>
+
+<h3>Características</h3>
+<ul>
+  <li>Grafos são <span class="term">DAGs</span> — estruturas de dados de propósito geral para qualquer tipo de dado conectado.</li>
+  <li><strong>Não são orientados a agregados</strong> — diferença fundamental dos demais NoSQL.</li>
+  <li>Suportam processamento transacional com propriedades <strong>ACID</strong>.</li>
+  <li>Percorrer relacionamentos é muito rápido — relacionamentos já estão <strong>persistidos</strong>, não precisam ser calculados via joins no momento da consulta.</li>
+  <li><strong>Problema de fragmentação</strong>: grafos são difíceis de particionar em múltiplos nós sem cortar muitas arestas, por isso costumam ser mantidos em um único nó.</li>
+</ul>
+
+<details>
+  <summary>Termo: DAG (Grafo Acíclico Dirigido)</summary>
+  <p>Um <span class="term">DAG (Directed Acyclic Graph)</span> é um grafo onde as arestas têm direção e não existem ciclos. Na prática, grafos de propriedades usados no NoSQL não são necessariamente acíclicos — o termo é usado de forma ampliada para descrever qualquer estrutura de grafo direcionado adequada para modelar relacionamentos.</p>
+</details>
+
+<h3>Classificação</h3>
+<ul>
+  <li><strong>Orientados a propriedades</strong> — tendência em Big Data/Data Science. Ex.: Neo4j (linguagem Cypher).</li>
+  <li><strong>Orientados a semântica (RDF)</strong> — tendência em Web Semântica e grafos do conhecimento. Ex.: Virtuoso, GraphDB (linguagem SPARQL).</li>
+</ul>
+
+<details>
+  <summary>Termos: Cypher e SPARQL</summary>
+  <p><span class="term">Cypher</span> — linguagem de consulta declarativa para grafos de propriedades, criada para o Neo4j. Permite expressar padrões de grafos de forma visual. Ex.: <code>MATCH (p:Pessoa)-[:AMIGO_DE]->(a) RETURN a.nome</code></p>
+  <p><span class="term">SPARQL</span> — linguagem de consulta para dados RDF (Resource Description Framework), o modelo da Web Semântica. Dados RDF são triplas (sujeito, predicado, objeto). Ex.: <code>SELECT ?nome WHERE { ?p rdf:type :Pessoa ; :nome ?nome }</code></p>
+</details>
+
+<h3>Comparativo NoSQL</h3>
+<table>
+  <tr><th>Critério</th><th>Chave-Valor</th><th>Documentos</th><th>Fam. Colunas</th><th>Grafos</th></tr>
+  <tr><td>Orientado a agregados</td><td>Sim</td><td>Sim</td><td>Sim</td><td>Não</td></tr>
+  <tr><td>ACID</td><td>Não</td><td>Não</td><td>Não</td><td>Sim</td></tr>
+  <tr><td>Índices secundários</td><td>Não</td><td>Sim</td><td>Parcial</td><td>Sim</td></tr>
+  <tr><td>Escalabilidade horizontal</td><td>Muito alta</td><td>Alta</td><td>Muito alta</td><td>Limitada</td></tr>
+  <tr><td>Consultas de relacionamento</td><td>Ruim</td><td>Médio</td><td>Médio</td><td>Excelente</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="mapreduce">3.11 Modelo MapReduce</h2>
+
+<p>MapReduce é um modelo de programação para processamento de grandes volumes de dados em ambientes distribuídos (Google, 2004). O armazenamento é fornecido por um <span class="term">DFS (Distributed File System)</span> como HDFS.</p>
+
+<details>
+  <summary>Termo: DFS (Distributed File System)</summary>
+  <p>Um <span class="term">sistema de arquivos distribuído</span> armazena arquivos fragmentados em múltiplos servidores de um cluster, com replicação automática para tolerância a falhas. O <strong>HDFS (Hadoop Distributed File System)</strong> é o DFS mais usado no ecossistema Big Data, dividindo arquivos em blocos (tipicamente 128 MB) distribuídos entre os nós.</p>
+</details>
+
+<h3>Pipeline</h3>
+<div class="diagram">Entrada (arquivos no DFS)
+       │
+       ▼
+  ┌──────────┐
+  │  MAP      │  → transforma cada item em 0 ou mais pares &lt;chave, valor&gt;
+  └──────────┘
+       │
+       ▼
+  ┌──────────────┐
+  │ SORT/SHUFFLE │  → agrupa todos os pares pela chave
+  └──────────────┘
+       │
+       ▼
+  ┌──────────┐
+  │  REDUCE   │  → para cada grupo de chave, produz um valor de saída
+  └──────────┘
+       │
+       ▼
+Saída (arquivos no DFS)</div>
+
+<h3>Exemplo — Contagem de Palavras</h3>
+<pre>Entrada:  "Deer Bear River", "Car Car River", "Deer Car Bear"
+
+Map:
+  Deer→1, Bear→1, River→1
+  Car→1,  Car→1,  River→1
+  Deer→1, Car→1,  Bear→1
+
+Sort/Shuffle:
+  Bear  → [1,1]
+  Car   → [1,1,1]
+  Deer  → [1,1]
+  River → [1,1]
+
+Reduce:
+  Bear→2,  Car→3,  Deer→2,  River→2</pre>
+
+<p>MapReduce é usado em análise de links, processamento de grafos, aprendizado de máquina, e muitas outras tarefas de Big Data. Frameworks principais: <strong>Hadoop MapReduce</strong>, <strong>Apache Spark</strong>.</p>
+
+<!-- ============================================================ -->
+<h1 id="newsql">4. Banco de Dados NewSQL</h1>
+
+<p><span class="term">NewSQL</span> é a categoria de SGBDs que combina o melhor dos dois mundos:</p>
+
+<table>
+  <tr><th>Característica</th><th>SQL</th><th>NoSQL</th><th>NewSQL</th></tr>
+  <tr><td>Modelo relacional</td><td>Sim</td><td>Não</td><td>Sim</td></tr>
+  <tr><td>Schema dinâmico</td><td>Não</td><td>Sim</td><td>Não / Parcial</td></tr>
+  <tr><td>Propriedades ACID</td><td>Sim</td><td>Não (CAP)</td><td>Sim</td></tr>
+  <tr><td>Linguagem SQL</td><td>Sim</td><td>Não</td><td>Sim</td></tr>
+  <tr><td>Escalabilidade</td><td>Vertical</td><td>Horizontal</td><td>Vertical + Horizontal</td></tr>
+  <tr><td>Distribuição</td><td>Sim (BDDr)</td><td>Sim</td><td>Sim</td></tr>
+  <tr><td>Consultas complexas</td><td>Sim</td><td>Parcial</td><td>Sim</td></tr>
+  <tr><td>Workload</td><td>OLTP ou OLAP</td><td>OLTP</td><td>OLTP + OLAP + HTAP</td></tr>
+</table>
+
+<h3>Técnicas do NewSQL</h3>
+<p>O NewSQL incorpora técnicas de ambos os mundos:</p>
+<ul>
+  <li><em>Do SGBDr:</em> processamento paralelo, in-memory e distribuído; tolerância a falhas e <span class="term">cluster failover</span>; replicação síncrona; streaming de dados.</li>
+  <li><em>Do NoSQL:</em> armazenamento e acesso chave-valor; persistência poliglota; sharding e particionamento vertical.</li>
+  <li><em>Exclusivo NewSQL:</em> gerenciamento escalável de transações; polystores e IMDBs; acesso via SQL, NoSQL e HDFS; processamento HTAP.</li>
+</ul>
+
+<details>
+  <summary>Termo: Cluster Failover</summary>
+  <p><span class="term">Cluster failover</span> é o processo automático pelo qual um cluster detecta a falha de um nó e redireciona o tráfego para nós saudáveis, sem interrupção perceptível para o usuário. Em bancos NewSQL, isso é implementado via replicação síncrona: o nó substituto já tem uma cópia atualizada dos dados e pode assumir imediatamente.</p>
+</details>
+
+<h3>Problema que o NewSQL resolve</h3>
+<ul>
+  <li>Engenharia de dados cara: manutenção e criação de <strong>ETL/ELT</strong> custam ~75% do processo de data analytics.</li>
+  <li>Consultas OLAP sobre dados legados podem ser um risco para negócios que exigem decisões em tempo real.</li>
+</ul>
+
+<details>
+  <summary>Termos: ETL e ELT</summary>
+  <p><span class="term">ETL (Extract, Transform, Load)</span> — processo de extrair dados de uma fonte, transformá-los (limpeza, conversão, enriquecimento) e carregá-los em um destino (ex.: data warehouse). A transformação ocorre <em>antes</em> da carga.</p>
+  <p><span class="term">ELT (Extract, Load, Transform)</span> — variante moderna onde os dados são carregados crus no destino e a transformação ocorre <em>depois</em>, aproveitando o poder de processamento do próprio sistema de destino (comum em data lakes e ambientes cloud).</p>
+</details>
+
+<h2 id="htap">4.1 HTAP — Hybrid Transactional and Analytical Processing</h2>
+
+<p>HTAP é uma arquitetura que permite <strong>processamento transacional (OLTP) e analítico (OLAP) simultâneos</strong> no mesmo sistema, eliminando a necessidade de ambientes separados e pipelines ETL.</p>
+
+<div class="diagram">Arquitetura Tradicional (sem HTAP):
+
+  Aplicação → SGBDr (OLTP) ──[ETL]──▶ Data Warehouse (OLAP)
+                                           (horas/dias de atraso)
+
+Arquitetura HTAP:
+
+  Aplicação → NewSQL/IMDB (OLTP + OLAP simultâneos)
+                  │
+              dados quentes disponíveis em tempo real para análise</div>
+
+<p>O termo foi definido pelo Gartner em 2014 como arquitetura em memória. Em 2018 o conceito foi estendido (<em>in-process HTAP</em>) para não se limitar mais apenas a técnicas in-memory.</p>
+
+<h3>Vantagens do HTAP</h3>
+<ul>
+  <li>Elimina a necessidade de ETL/ELT.</li>
+  <li>Armazena dados em vários formatos simultaneamente.</li>
+  <li>Reduz custos de engenharia de dados.</li>
+  <li><span class="term">Data freshness</span> — consultas analíticas em tempo real sobre dados quentes (recém inseridos/atualizados).</li>
+</ul>
+
+<h3>Trade-offs HTAP</h3>
+<p>Existe uma tensão entre dois objetivos:</p>
+<ul>
+  <li><strong>Isolamento de carga de trabalho</strong> — separar OLTP e OLAP para não prejudicar um ao outro.</li>
+  <li><strong>Atualização de dados (data freshness)</strong> — garantir que OLAP enxergue os dados mais recentes do OLTP.</li>
+</ul>
+<p>Alto isolamento → baixa atualização. Baixo isolamento → alta atualização. O NewSQL equilibra esses dois objetivos.</p>
+
+<h2 id="newsql-taxonomia">4.2 Taxonomia dos Sistemas NewSQL</h2>
+
+<h3>Dimensão 1 — Modelo de Transação</h3>
+<table>
+  <tr><th>Tipo</th><th>Descrição</th></tr>
+  <tr><td><strong>Ad hoc</strong></td><td>ACID parcialmente suportado. Isolamento e atomicidade não garantidos.</td></tr>
+  <tr><td><strong>Conhecimento a priori</strong></td><td>Exige conhecimento prévio das colunas a processar antes da execução.</td></tr>
+  <tr><td><strong>ACID completo</strong></td><td>ACID totalmente suportado, com múltiplos níveis de isolamento (serialização, <em>snapshot</em>).</td></tr>
+</table>
+
+<details>
+  <summary>Termo: Snapshot Isolation</summary>
+  <p><span class="term">Snapshot isolation</span> é um nível de isolamento de transações no qual cada transação enxerga um <em>snapshot</em> (fotografia) consistente do banco de dados do momento em que ela iniciou. Novas escritas de outras transações não afetam a visão da transação atual. É implementado via MVCC. Garante que uma transação nunca leia um dado parcialmente atualizado por outra transação concorrente, mas pode permitir <em>write skew</em> em casos específicos — por isso não é equivalente à serialização completa.</p>
+</details>
+
+<h3>Dimensão 2 — Escalabilidade</h3>
+<table>
+  <tr><th>Tipo</th><th>Descrição</th></tr>
+  <tr><td><strong>Limitada</strong></td><td>Gerenciador de transações centralizado; escala até saturar.</td></tr>
+  <tr><td><strong>Logarítmica</strong></td><td>Replicação <span class="term">ROWA</span>; escala bem em leitura. Usa 2PC para transações concorrentes em múltiplos nós.</td></tr>
+  <tr><td><strong>Linear</strong></td><td>Válida apenas em clusters <em>shared-nothing</em>.</td></tr>
+</table>
+
+<details>
+  <summary>Termos: ROWA, 2PC e Shared-Nothing</summary>
+  <p><span class="term">ROWA (Read-One Write-All)</span> — protocolo de replicação onde qualquer nó pode servir leituras, mas escritas devem ser propagadas a <em>todos</em> os nós antes de confirmar. Escala bem em leitura, mas não em escrita.</p>
+  <p><span class="term">2PC (Two-Phase Commit)</span> — protocolo distribuído para garantir que uma transação que envolve múltiplos nós seja confirmada (commit) ou abortada (rollback) de forma atômica em todos. Fase 1: coordenador pede voto a todos os participantes. Fase 2: se todos votarem "sim", confirma; caso contrário, aborta. Problema: se o coordenador falhar no meio do processo, os participantes ficam bloqueados.</p>
+  <p><span class="term">Shared-Nothing</span> — arquitetura de cluster onde cada nó tem sua própria memória e disco, sem compartilhamento de recursos. Isso facilita a escalabilidade linear porque adicionar nós não cria contenção em recursos compartilhados.</p>
+</details>
+
+<h3>Dimensão 3 — Armazenamento</h3>
+<table>
+  <tr><th>Tipo</th><th>Descrição</th></tr>
+  <tr><td><strong>Relacional</strong></td><td>Operadores tradicionais de álgebra relacional: filtragem, agregação, agrupamento, ordenação.</td></tr>
+  <tr><td><strong>Chave-Valor</strong></td><td>Leitura e escrita individuais em itens de dados; suporta múltiplas linguagens de consulta.</td></tr>
+</table>
+
+<h3>Dimensão 4 — Paralelismo de Consultas</h3>
+<table>
+  <tr><th>Tipo</th><th>Descrição</th></tr>
+  <tr><td><strong>Inter-query</strong></td><td>Múltiplas consultas diferentes processadas em paralelo.</td></tr>
+  <tr><td><strong>Intra-query inter-operator</strong></td><td>Operadores diferentes do plano de consulta executados em nós diferentes do cluster.</td></tr>
+  <tr><td><strong>Intra-query intra-operator</strong></td><td>O mesmo operador executado em múltiplos nós simultaneamente.</td></tr>
+</table>
+
+<h2 id="newsql-sabores">4.3 Sabores dos Sistemas NewSQL</h2>
+
+<table>
+  <tr><th>Produto</th><th>Objetivo</th><th>Trans.</th><th>Escal.</th><th>Armazenamento</th><th>Paralelismo</th><th>Polystore</th></tr>
+  <tr><td>Google Spanner</td><td>OLTP</td><td>ACID</td><td>Linear</td><td>Chave-Valor</td><td>Inter-query</td><td>—</td></tr>
+  <tr><td>LeanXcale</td><td>HTAP</td><td>ACID</td><td>Linear</td><td>Relacional + Chave-Valor</td><td>Inter+Intra-operator</td><td>SQL, NoSQL, HDFS</td></tr>
+  <tr><td>SAP HANA</td><td>HTAP</td><td>ACID</td><td>2PC</td><td>Relacional + Colunas</td><td>Inter+Intra-operator</td><td>HDFS</td></tr>
+  <tr><td>MemSQL / SingleStore</td><td>HTAP</td><td>Ad hoc</td><td>Log.</td><td>Relacional</td><td>Inter-query</td><td>HDFS (Spark)</td></tr>
+  <tr><td>NuoDB</td><td>OLTP</td><td>ACID</td><td>Log.</td><td>Chave-Valor</td><td>Inter-query</td><td>HDFS</td></tr>
+  <tr><td>Splice Machine</td><td>HTAP</td><td>ACID</td><td>Central.</td><td>Chave-Valor</td><td>Inter+Intra-operator</td><td>HBase, HDFS</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h1 id="imdb">5. Banco de Dados In-Memory (IMDB)</h1>
+
+<p>IMDBs são SGBDs do tipo NewSQL que mantêm os dados <strong>permanentemente na memória RAM</strong>, eliminando o gargalo de I/O do armazenamento secundário.</p>
+
+<p class="note">A ideia surgiu nos anos 1990 (TimesTen, Altabase). O mercado global de IMDB é estimado em US$ 20 bilhões em 2029.</p>
+
+<h3>Por que IMDB se tornaram importantes?</h3>
+<ul>
+  <li>Crescimento da capacidade de RAM com redução de custo por GB.</li>
+  <li>Lei de Moore: barateamento de processadores multicore.</li>
+  <li>Arquiteturas modernas: <span class="term">SIMD</span>, <span class="term">NUMA</span>, múltiplos sockets.</li>
+  <li>Big Data demandando alta vazão de processamento.</li>
+  <li>Aplicações modernas exigem análises de eventos em tempo real.</li>
+</ul>
+
+<details>
+  <summary>Termos: SIMD e NUMA</summary>
+  <p><span class="term">SIMD (Single Instruction Multiple Data)</span> — extensão de arquitetura de CPU que permite executar a mesma operação em múltiplos valores de dados em paralelo com uma única instrução. Ex.: somar 8 pares de inteiros com um único <em>opcode</em>. Fundamental para IMDBs que precisam processar grandes vetores de dados na RAM em alta velocidade.</p>
+  <p><span class="term">NUMA (Non-Uniform Memory Access)</span> — arquitetura de servidor com múltiplos processadores onde cada CPU tem acesso mais rápido à sua memória local que à memória de outras CPUs. IMDBs precisam ser projetados para minimizar acessos a memória remota (cross-NUMA), priorizando a localidade dos dados.</p>
+</details>
+
+<h3>Arquitetura Conceitual dos IMDB</h3>
+
+<div class="diagram">┌──────────────────────────────────────────────────────┐
+│                     SQL Engine                        │
+│   (Otimizador de Consultas + Index & Data Manager)   │
+│                  Logs & Locks                         │
+│                                                      │
+│  ┌────────────────────────────────────┐              │
+│  │         DATA STORE (RAM)           │              │
+│  │  (dados quentes, índices, versões) │              │
+│  └────────────────────────────────────┘              │
+└──────────────────────────────────────────────────────┘
+           │ Log / Checkpoint
+           ▼
+  ┌────────────────────┐
+  │  Armazenamento     │  (HD/SSD — dados frios, logs,
+  │  Secundário        │   checkpoints, backups)
+  └────────────────────┘</div>
+
+<h3>Comparação BDRD × IMDB</h3>
+<table>
+  <tr><th>Aspecto</th><th>BD em Disco (BDRD)</th><th>BD em Memória (IMDB)</th></tr>
+  <tr><td>I/O</td><td>Elevados tempos de I/O</td><td>Sem I/O para dados quentes</td></tr>
+  <tr><td>Cache</td><td>Buffer pool: copia páginas do disco para RAM</td><td>Dados já estão na RAM</td></tr>
+  <tr><td>Otimização</td><td>Algoritmos para minimizar acessos ao disco</td><td>Algoritmos para uso eficiente da RAM</td></tr>
+  <tr><td>CPU</td><td>Mais ciclos para gerenciar buffer pool</td><td>Menos ciclos</td></tr>
+  <tr><td>Organização</td><td>Páginas/frames de tamanho fixo em disco</td><td>Blocos/páginas em memória (tamanho fixo ou variável)</td></tr>
+  <tr><td>Durabilidade</td><td>Persistência nativa (não volátil)</td><td>Volátil — requer logging e checkpoint</td></tr>
+  <tr><td>Acesso</td><td>Mais lento (I/O de disco)</td><td>Direto e mais rápido</td></tr>
+</table>
+
+<h3>Vantagens</h3>
+<ul>
+  <li>Baixíssima latência — dados já estão na RAM.</li>
+  <li>Insights em tempo real — análise de streaming de eventos.</li>
+  <li>Alta disponibilidade — consistência por padrão.</li>
+  <li>Suporte a SQL, ACID, OLAP e OLTP simultâneos (HTAP).</li>
+</ul>
+
+<h3>Desvantagens</h3>
+<ul>
+  <li>Baixa durabilidade — dados voláteis; risco de perda em crash.</li>
+  <li>Custo — RAM ainda é mais cara que disco.</li>
+  <li>Arquitetura mais complexa e várias implementações distintas.</li>
+</ul>
+
+<h2 id="imdb-conceitos">5.1 Conceitos Principais dos IMDB</h2>
+
+<h3>Hot &amp; Cold Data</h3>
+<p>Nem todos os dados precisam estar na RAM simultaneamente — isso seria ineficiente e custoso.</p>
+<table>
+  <tr><th>Tipo</th><th>Armazenamento</th><th>Características</th></tr>
+  <tr><td><strong>Dados quentes (hot)</strong></td><td>RAM</td><td>Acessados com frequência, missão crítica, dados recentes</td></tr>
+  <tr><td><strong>Dados frios (cold)</strong></td><td>HD/SSD</td><td>Estáticos, históricos, acessados raramente</td></tr>
+</table>
+<p>A solução é classificar os dados e definir critérios de transferência entre armazenamentos, com logging e checkpoints para garantir a persistência.</p>
+
+<h3>Organização de Dados</h3>
+<table>
+  <tr><th>Modelo</th><th>Descrição</th><th>Ideal para</th></tr>
+  <tr><td><strong>Orientado a linhas (NSM)</strong></td><td>Atributos de um registro armazenados contiguamente na memória</td><td>OLTP — acessa todos os atributos de um registro por vez</td></tr>
+  <tr><td><strong>Orientado a colunas (DSM)</strong></td><td>Valores de um mesmo atributo de todos os registros armazenados contiguamente</td><td>OLAP — acessa um atributo de muitos registros</td></tr>
+</table>
+
+<details>
+  <summary>Termos: NSM e DSM</summary>
+  <p><span class="term">NSM (N-ary Storage Model)</span> — cada linha (registro) é armazenada inteira de forma contígua. Bom para OLTP porque inserir/atualizar um registro requer escrever numa região contígua.</p>
+  <p><span class="term">DSM (Decomposition Storage Model)</span> — cada coluna é armazenada de forma contígua. Bom para OLAP porque uma consulta que lê apenas 2 colunas de uma tabela com 50 colunas não precisa carregar o resto. Permite compressão eficiente de dados similares contíguos.</p>
+</details>
+
+<h3>Particionamento de Dados</h3>
+<p>Alguns IMDBs (H-Store, VoltDB, Calvin) implementam particionamento, outros não.</p>
+<ul>
+  <li>Um banco é dividido em <strong>partições disjuntas e independentes</strong>.</li>
+  <li>Transações são executadas em paralelo em cada partição.</li>
+  <li><strong>Desvantagem</strong>: uma transação que acessa múltiplas partições precisa aguardar até que todas estejam disponíveis.</li>
+  <li>IMDBs que usam particionamento frequentemente <strong>não implementam controle de concorrência</strong> — as transações dentro de cada partição executam serialmente, eliminando a necessidade de locks.</li>
+</ul>
+
+<h3>Indexação</h3>
+<ul>
+  <li>Dados são organizados em <strong>blocos/páginas em memória</strong> (não em frames de disco como nos SGBDr).</li>
+  <li>Índices para acesso direto aos dados em RAM — podem ser do tipo <strong>hash</strong> ou <strong>T-Tree</strong>.</li>
+  <li>Páginas de tamanho fixo ou variável.</li>
+  <li>Uso de <strong>checksum</strong> para detectar erros de software (corrupção em memória).</li>
+</ul>
+
+<details>
+  <summary>Termo: T-Tree (Índice em Memória)</summary>
+  <p>Uma <span class="term">T-Tree</span> é uma árvore de busca balanceada otimizada para dados em memória principal (análoga à B-Tree, que é otimizada para disco). Cada nó armazena um intervalo de valores e ponteiros para os dados reais, permitindo buscas eficientes por intervalos em RAM. Alternativa moderna: árvores <em>skip list</em> ou estruturas baseadas em hashing.</p>
+</details>
+
+<h3>Versionamento de Dados</h3>
+<p>Muitos IMDBs (Hekaton, HyPer, SAP HANA) implementam múltiplas versões dos dados:</p>
+<ol>
+  <li>Uma modificação <strong>não sobrescreve</strong> o valor original na RAM — cria uma <em>shadow version</em> (versão sombra) em endereço diferente.</li>
+  <li>Quando a modificação é confirmada, a versão sombra torna-se a versão atual.</li>
+  <li>A versão anterior permanece no banco e é removida pelo <strong>garbage collection</strong> quando nenhuma transação ativa a referencia mais.</li>
+</ol>
+<p>O versionamento facilita a implementação de MVCC e permite criar backups (snapshots) para tolerância a falhas.</p>
+
+<h3>Processamento de Consultas</h3>
+<p>IMDBs fazem análise e otimização de SQL de forma similar ao SGBDr, mas diferem na execução:</p>
+<ul>
+  <li>Alguns compilam transações em <strong>código de máquina nativo</strong> (stored procedures compiladas), evitando interpretação em tempo de execução. Ex.: VoltDB.</li>
+  <li><strong>Desvantagem</strong>: o banco precisa conhecer as transações com antecedência, o que é difícil de implementar para workloads ad hoc.</li>
+</ul>
+
+<details>
+  <summary>Termo: Stored Procedure</summary>
+  <p>Uma <span class="term">stored procedure</span> é um procedimento SQL pré-compilado e armazenado no banco de dados. Pode ser chamado repetidamente sem recompilar, o que reduz latência. No contexto de IMDBs, VoltDB vai além e compila as stored procedures em código de máquina nativo, eliminando até o overhead do interpretador SQL.</p>
+</details>
+
+<h2 id="imdb-mvcc">5.2 Controle de Concorrência nos IMDB</h2>
+
+<p>Os principais mecanismos são:</p>
+
+<h3>MVCC (Multiversion Concurrency Control)</h3>
+<p>Já explicado na seção de NoSQL. Nos IMDBs:</p>
+<ul>
+  <li><strong>MVCC otimista</strong> (Hekaton, HyPer): sem lock durante a transação; verificação de conflito apenas no commit. Se conflito, apenas uma transação vence — as demais são abortadas.</li>
+  <li><strong>MVCC pessimista</strong> (SAP HANA): MVCC para leituras + locks ao nível de registro para escritas.</li>
+  <li><strong>Custo</strong>: overhead de criar versões e de garbage collection para remover versões obsoletas.</li>
+</ul>
+
+<h3>Particionamento sem Concorrência</h3>
+<p>IMDBs com particionamento (ex.: VoltDB) executam transações serialmente dentro de cada partição — sem locks, sem MVCC. Isso só é possível porque a partição é de thread única.</p>
+
+<h2 id="imdb-falhas">5.3 Recuperação de Falhas nos IMDB</h2>
+
+<p>Como a RAM é volátil, IMDBs implementam <strong>logging</strong>, <strong>checkpoint</strong> e <strong>recovery</strong> para garantir durabilidade:</p>
+
+<div class="diagram">  IMDB (RAM)
+      │
+      ├──[Logger]──▶  Log (disco): registra cada operação ou transação
+      │
+      └──[CheckPointer]──▶  Snapshot (disco): fotografia completa do BD em um instante
+
+  Em caso de falha:
+      HD/SSD ──[Recovery]──▶ IMDB (RAM) restaurado a partir do último snapshot + logs</div>
+
+<table>
+  <tr><th>IMDB</th><th>Tipo de Log</th><th>Tipo de Checkpoint</th></tr>
+  <tr><td>Hekaton</td><td>Operação</td><td>Versões de dados</td></tr>
+  <tr><td>VoltDB</td><td>Transação</td><td>Snapshot</td></tr>
+  <tr><td>HyPer</td><td>Transação</td><td>Snapshot</td></tr>
+  <tr><td>SAP HANA</td><td>Operação</td><td>Snapshot</td></tr>
+  <tr><td>SiloR</td><td>Valor</td><td>Snapshot "fuzzy"</td></tr>
+</table>
+
+<details>
+  <summary>Termos: Logging, Checkpoint e Recovery</summary>
+  <p><span class="term">Logging</span> — registro contínuo de todas as operações ou transações realizadas, escrito em disco. Permite reconstruir o estado do banco após uma falha.</p>
+  <p><span class="term">Checkpoint</span> — snapshot completo do estado atual do banco gravado em disco em determinados intervalos. Reduz o tempo de recovery porque só é necessário aplicar os logs <em>após</em> o último checkpoint. Variantes: <em>Naive</em> (pausa o sistema), <em>ZigZag</em>, <em>Piggyback</em> (sobrepõe com operações normais).</p>
+  <p><span class="term">Recovery</span> — processo de restaurar o banco de dados a partir do checkpoint mais recente mais os logs subsequentes, recarregando tudo na RAM após uma falha.</p>
+</details>
+
+<p class="note">O processo de logging tem overhead de I/O. Para minimizá-lo, técnicas como <em>group commit</em> (agrupar múltiplos logs em uma única escrita) e logs em SSD de alta velocidade são utilizadas.</p>
+
+<!-- ============================================================ -->
+<hr>
+<p class="note center">BD2 — Resumo expandido com base nos slides da disciplina (2026/1). Prof. Sergio Serra — PPGI/UFRJ.</p>
+
+</body>
+</html>
