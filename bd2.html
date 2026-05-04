@@ -29,48 +29,78 @@
     .toc li { margin: 2px 0; }
     .caps { font-variant: small-caps; }
     .center { text-align: center; }
+
+    /* floating TOC */
+    #toc-float { position: fixed; top: 14px; right: 14px; z-index: 1000; }
+    #toc-btn {
+      background: #fff; border: 1px solid #555; padding: 5px 10px;
+      cursor: pointer; font-size: 1.1em; border-radius: 3px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.15);
+    }
+    #toc-btn:hover { background: #f0f0f0; }
+    #toc-panel {
+      display: none; position: absolute; right: 0; top: 36px;
+      background: #fff; border: 1px solid #888; padding: 12px 18px;
+      min-width: 270px; max-height: 82vh; overflow-y: auto;
+      box-shadow: 2px 4px 12px rgba(0,0,0,0.18); border-radius: 3px;
+    }
+    #toc-panel.open { display: block; }
+    #toc-panel strong { display: block; margin-bottom: 6px; }
+    #toc-panel ul { margin: 3px 0; padding-left: 16px; }
+    #toc-panel li { margin: 2px 0; }
+    #toc-panel a { font-size: 0.88em; text-decoration: none; color: #000; }
+    #toc-panel a:hover { text-decoration: underline; }
+
+    /* Q&A section */
+    .qa-item { border-left: 3px solid #888; padding-left: 14px; margin: 20px 0; }
+    .qa-item .question { font-weight: bold; margin-bottom: 6px; }
+    .qa-item .answer { margin-top: 6px; }
   </style>
 </head>
 <body>
 
 <h1>Modelos e Arquiteturas de Armazenamento de Grandes Volumes de Dados — NoSQL, NewSQL e In-Memory DB</h1>
 
-<nav class="toc">
-  <strong>Sumário</strong>
-  <ul>
-    <li><a href="#evolucao">1. Evolução dos Bancos de Dados</a></li>
-    <li><a href="#bigdata">2. Big Data</a></li>
-    <li><a href="#nosql">3. NoSQL</a>
-      <ul>
-        <li><a href="#nosql-caracteristicas">3.1 Características Gerais</a></li>
-        <li><a href="#nosql-modelos">3.2 Modelos de Dados</a></li>
-        <li><a href="#nosql-agregados">3.3 Agregados</a></li>
-        <li><a href="#nosql-distribuicao">3.4 Distribuição de Dados</a></li>
-        <li><a href="#nosql-consistencia">3.5 Consistência, CAP e BASE</a></li>
-        <li><a href="#nosql-polystores">3.6 Persistência Poliglota</a></li>
-        <li><a href="#chave-valor">3.7 Chave-Valor</a></li>
-        <li><a href="#documentos">3.8 Documentos</a></li>
-        <li><a href="#colunas">3.9 Família de Colunas</a></li>
-        <li><a href="#grafos">3.10 Grafos</a></li>
-        <li><a href="#mapreduce">3.11 MapReduce</a></li>
-      </ul>
-    </li>
-    <li><a href="#newsql">4. NewSQL</a>
-      <ul>
-        <li><a href="#htap">4.1 HTAP</a></li>
-        <li><a href="#newsql-taxonomia">4.2 Taxonomia</a></li>
-        <li><a href="#newsql-sabores">4.3 Sabores do NewSQL</a></li>
-      </ul>
-    </li>
-    <li><a href="#imdb">5. Banco de Dados In-Memory (IMDB)</a>
-      <ul>
-        <li><a href="#imdb-conceitos">5.1 Conceitos Principais</a></li>
-        <li><a href="#imdb-mvcc">5.2 MVCC e Controle de Concorrência</a></li>
-        <li><a href="#imdb-falhas">5.3 Recuperação de Falhas</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
+<div id="toc-float">
+  <button id="toc-btn" onclick="toggleToc()" title="Sumário">☰</button>
+  <nav id="toc-panel">
+    <strong>Sumário</strong>
+    <ul>
+      <li><a href="#evolucao">1. Evolução dos Bancos de Dados</a></li>
+      <li><a href="#bigdata">2. Big Data</a></li>
+      <li><a href="#nosql">3. NoSQL</a>
+        <ul>
+          <li><a href="#nosql-caracteristicas">3.1 Características Gerais</a></li>
+          <li><a href="#nosql-modelos">3.2 Modelos de Dados</a></li>
+          <li><a href="#nosql-agregados">3.3 Agregados</a></li>
+          <li><a href="#nosql-distribuicao">3.4 Distribuição de Dados</a></li>
+          <li><a href="#nosql-consistencia">3.5 Consistência, CAP e BASE</a></li>
+          <li><a href="#nosql-polystores">3.6 Persistência Poliglota</a></li>
+          <li><a href="#chave-valor">3.7 Chave-Valor</a></li>
+          <li><a href="#documentos">3.8 Documentos</a></li>
+          <li><a href="#colunas">3.9 Família de Colunas</a></li>
+          <li><a href="#grafos">3.10 Grafos</a></li>
+          <li><a href="#mapreduce">3.11 MapReduce</a></li>
+        </ul>
+      </li>
+      <li><a href="#newsql">4. NewSQL</a>
+        <ul>
+          <li><a href="#htap">4.1 HTAP</a></li>
+          <li><a href="#newsql-taxonomia">4.2 Taxonomia</a></li>
+          <li><a href="#newsql-sabores">4.3 Sabores do NewSQL</a></li>
+        </ul>
+      </li>
+      <li><a href="#imdb">5. Banco de Dados In-Memory (IMDB)</a>
+        <ul>
+          <li><a href="#imdb-conceitos">5.1 Conceitos Principais</a></li>
+          <li><a href="#imdb-mvcc">5.2 MVCC e Controle de Concorrência</a></li>
+          <li><a href="#imdb-falhas">5.3 Recuperação de Falhas</a></li>
+        </ul>
+      </li>
+      <li><a href="#duvidas">6. Dúvidas</a></li>
+    </ul>
+  </nav>
+</div>
 
 <!-- ============================================================ -->
 <h1 id="evolucao">1. Evolução dos Bancos de Dados</h1>
@@ -246,10 +276,42 @@
 <table>
   <tr><th></th><th>Mestre-Escravo</th><th>Ponto a Ponto (P2P)</th></tr>
   <tr><td><strong>Estrutura</strong></td><td>Um nó mestre (primário), demais são escravos (cópias)</td><td>Todos os nós têm o mesmo peso</td></tr>
-  <tr><td><strong>Leitura</strong></td><td>Escravos ampliam capacidade de leitura</td><td>Qualquer nó atende leituras e escritas</td></tr>
+  <tr><td><strong>Leitura</strong></td><td>Escravos ampliam capacidade de leitura</td><td>Qualquer nó atende leituras</td></tr>
   <tr><td><strong>Escrita</strong></td><td>Apenas o mestre; gargalo em writes</td><td>Qualquer nó; alta escalabilidade de escrita</td></tr>
-  <tr><td><strong>Resiliência</strong></td><td>Escravos assumem se mestre falhar</td><td>Perda de nó não afeta disponibilidade</td></tr>
-  <tr><td><strong>Risco</strong></td><td>Inconsistência se réplica não for propagada antes da falha</td><td>Inconsistência se o mesmo dado for atualizado em nós diferentes simultaneamente</td></tr>
+  <tr><td><strong>Resiliência</strong></td><td>Escravos podem assumir se mestre falhar (failover)</td><td>Perda de qualquer nó não afeta disponibilidade</td></tr>
+  <tr><td><strong>Risco principal</strong></td><td>Inconsistência se réplica não for propagada antes da falha do mestre</td><td>Conflito escrita-escrita se dois nós atualizarem o mesmo dado simultaneamente</td></tr>
+  <tr><td><strong>Vantagens</strong></td>
+    <td>
+      <ul style="margin:2px 0; padding-left:16px;">
+        <li>Modelo simples: um único ponto de escrita evita conflitos de concorrência</li>
+        <li>Consistência mais fácil de garantir (especialmente com propagação síncrona)</li>
+        <li>Boa para workloads de leitura pesada</li>
+      </ul>
+    </td>
+    <td>
+      <ul style="margin:2px 0; padding-left:16px;">
+        <li>Sem ponto único de falha — alta disponibilidade de leitura <em>e</em> escrita</li>
+        <li>Escala horizontalmente tanto reads quanto writes</li>
+        <li>Sem eleição de novo mestre em caso de falha</li>
+      </ul>
+    </td>
+  </tr>
+  <tr><td><strong>Desvantagens</strong></td>
+    <td>
+      <ul style="margin:2px 0; padding-left:16px;">
+        <li>Mestre é gargalo de escrita; não escala writes com mais nós</li>
+        <li>Failover manual ou semiautomático pode introduzir janela de indisponibilidade</li>
+        <li>Com propagação assíncrona, escravos podem retornar dados desatualizados</li>
+      </ul>
+    </td>
+    <td>
+      <ul style="margin:2px 0; padding-left:16px;">
+        <li>Conflitos de escrita-escrita são mais prováveis e exigem resolução (vetores de versão, CRDTs)</li>
+        <li>Consistência mais difícil de garantir — tende a consistência eventual</li>
+        <li>Complexidade de coordenação maior entre nós</li>
+      </ul>
+    </td>
+  </tr>
 </table>
 
 <p>Propagação no modelo mestre-escravo:</p>
@@ -857,8 +919,165 @@ Arquitetura HTAP:
 <p class="note">O processo de logging tem overhead de I/O. Para minimizá-lo, técnicas como <em>group commit</em> (agrupar múltiplos logs em uma única escrita) e logs em SSD de alta velocidade são utilizadas.</p>
 
 <!-- ============================================================ -->
+<h1 id="duvidas">6. Dúvidas</h1>
+
+<div class="qa-item">
+  <p class="question">1. Por que NoSQL escala melhor horizontalmente?</p>
+  <div class="answer">
+    <p>SGBDs relacionais exigem coordenação entre nós para garantir consistência forte: JOINs buscam dados em servidores diferentes, transações distribuídas usam protocolos como 2PC, e validação de chaves estrangeiras requer comunicação cross-nó. Cada operação precisa "perguntar" a outros servidores antes de confirmar.</p>
+    <p>No NoSQL, o modelo orientado a <strong>agregados</strong> elimina essa dependência:</p>
+    <ul>
+      <li>Cada operação acessa um único agregado que reside em um único nó — sem comunicação inter-nó para reads simples.</li>
+      <li>Sem chaves estrangeiras → sem validação cruzada entre nós.</li>
+      <li>Sem transações distribuídas → sem overhead de coordenação.</li>
+      <li>Autofragmentação: o banco redistribui agregados automaticamente ao adicionar nós.</li>
+    </ul>
+    <p>Resultado: adicionar um nó ao cluster distribui a carga de forma quase linear. No relacional, adicionar nós sem refatorar o esquema não garante essa linearidade.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">2. NoSQL permite transações sobre múltiplos agregados?</p>
+  <div class="answer">
+    <p>Em geral, <strong>não</strong> — e isso é uma escolha de projeto deliberada. A atomicidade no NoSQL se aplica apenas a um único agregado. Não há garantia de atomicidade entre múltiplos agregados.</p>
+    <p><strong>Por que não?</strong> Transações distribuídas exigem protocolos de coordenação (como 2PC) que aumentam latência, reduzem disponibilidade e conflitam diretamente com os princípios BASE e o teorema CAP.</p>
+    <p><strong>Exceções:</strong></p>
+    <ul>
+      <li><strong>MongoDB</strong> (v4.0+) introduziu <em>multi-document transactions</em> com ACID, mas com custo de performance — vai contra os princípios originais do NoSQL e só é recomendado quando estritamente necessário.</li>
+      <li><strong>Bancos de grafos</strong> (Neo4j) são uma exceção estrutural: suportam propriedades ACID completas, inclusive transações que abrangem múltiplos nós do grafo, porque não são orientados a agregados.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">3. Como funcionam relacionamentos no NoSQL se não há chave estrangeira?</p>
+  <div class="answer">
+    <p>Existem três abordagens, e a escolha depende do modelo:</p>
+    <ol>
+      <li><strong>Embedding (desnormalização)</strong> — dados relacionados são incorporados dentro do agregado. Ex.: o endereço do cliente fica dentro do documento do pedido. Uma única consulta retorna tudo. Desvantagem: duplicação de dados se o mesmo cliente aparecer em muitos pedidos.</li>
+      <li><strong>Referências manuais</strong> — um documento armazena o ID do documento relacionado (equivalente à FK, mas sem enforcement). A aplicação faz uma segunda consulta para buscar o relacionado. Não há JOIN automático no banco.</li>
+      <li><strong>Bancos de grafos</strong> — o relacionamento é um cidadão de primeira classe: uma aresta explícita entre dois nós, com propriedades. Permite consultas como "encontre todos os amigos de amigos de João que moram em SP" de forma nativa e eficiente.</li>
+    </ol>
+    <p>Nos modelos chave-valor e colunar, relacionamentos praticamente inexistem no banco — toda a lógica de associação fica na aplicação.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">4. O melhor suporte a particionamento horizontal se deve ao fato de escalar melhor horizontalmente?</p>
+  <div class="answer">
+    <p>São dois aspectos do mesmo fenômeno com a mesma causa raiz, não uma causa da outra. A causa fundamental é o <strong>modelo de dados orientado a agregados</strong>:</p>
+    <ul>
+      <li>Um agregado é uma unidade auto-contida — sem dependências externas (sem FKs, sem JOINs necessários).</li>
+      <li>Isso torna o agregado a unidade natural de particionamento: pode ser movido para qualquer nó sem coordenação.</li>
+      <li>No relacional, um fragmento de tabela pode precisar de JOIN com outra tabela em nó diferente → comunicação de rede e coordenação obrigatórias.</li>
+      <li>No NoSQL, a consulta geralmente acessa um único agregado → um único nó → sem comunicação inter-nó.</li>
+    </ul>
+    <p>O fluxo causal é: modelo orientado a agregados → particionamento horizontal simples → escalabilidade horizontal eficiente.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">5. Consistência em ACID vs. CAP/BASE: são o mesmo conceito?</p>
+  <div class="answer">
+    <p>Não — são dois conceitos distintos que compartilham o mesmo nome, o que é uma fonte clássica de confusão:</p>
+    <table>
+      <tr><th></th><th>Consistência ACID</th><th>Consistência CAP/BASE</th></tr>
+      <tr><td><strong>Nível</strong></td><td>Nível do banco de dados</td><td>Nível do sistema distribuído</td></tr>
+      <tr><td><strong>Significado</strong></td><td>O banco sempre passa de um estado <em>válido</em> para outro estado <em>válido</em> — respeita constraints, FKs, tipos, regras de negócio</td><td>Todos os nós do cluster retornam o <em>mesmo valor</em> para um dado ao mesmo tempo — sincronismo entre réplicas</td></tr>
+      <tr><td><strong>Exemplo</strong></td><td>Após uma transferência bancária, o saldo total não muda — nenhuma regra de integridade foi violada</td><td>Após uma escrita no Nó A, uma leitura imediata no Nó B retorna o valor atualizado</td></tr>
+      <tr><td><strong>BASE trata de...</strong></td><td>— (não é sobre ACID)</td><td><em>Eventually Consistent</em>: réplicas convergem para o mesmo valor eventualmente, mas podem estar desatualizadas por um período</td></tr>
+    </table>
+    <p>Resumo: ACID consistência = integridade dos dados (não está corrompido). CAP consistência = sincronismo entre réplicas (todos veem o mesmo valor ao mesmo tempo).</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">6. Por que a opacidade do agregado é um problema para fragmentação e replicação?</p>
+  <div class="answer">
+    <p>O banco de dados trata o valor de um agregado como um <em>blob</em> opaco — ele conhece a chave, mas não enxerga a estrutura interna.</p>
+    <p><strong>No modelo relacional</strong>, o sistema sabe que a coluna <code>cidade</code> existe na tabela <code>clientes</code> e pode usar isso para fragmentação inteligente: "todos os clientes de SP vão para o Nó A, todos do RJ para o Nó B" — fragmentação por predicado sobre conteúdo.</p>
+    <p><strong>Em um NoSQL chave-valor puro</strong> (ex.: Redis), o banco não sabe que dentro do valor existe um campo <code>cidade</code>. Ele só pode fragmentar pela chave do agregado inteiro:</p>
+    <pre>{
+  "pedido_1001": { "cliente": { "cidade": "Rio" }, "itens": [...] }
+}</pre>
+    <p>O banco só enxerga <code>"pedido_1001"</code> — não consegue colocar automaticamente todos os pedidos do Rio no nó geograficamente mais próximo.</p>
+    <p><strong>Consequências práticas:</strong></p>
+    <ul>
+      <li>Fragmentação automática por conteúdo interno é impossível sem lógica extra na aplicação.</li>
+      <li>A localidade geográfica dos dados depende de como a aplicação define a chave do agregado.</li>
+      <li>Índices secundários (ex.: MongoDB) "quebram" a opacidade e permitem consultas por campos internos, mas são uma extensão do modelo básico.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">7. Qual a relação entre persistência poliglota e NewSQL?</p>
+  <div class="answer">
+    <p>São conceitos relacionados mas distintos em escopo:</p>
+    <table>
+      <tr><th>Conceito</th><th>Definição</th><th>Escopo</th></tr>
+      <tr><td><strong>Persistência poliglota</strong></td><td>Arquitetura de software que usa múltiplos sistemas de armazenamento heterogêneos para diferentes necessidades (ex.: Redis para cache, MongoDB para catálogo, PostgreSQL para pedidos)</td><td>Conceito arquitetural geral — independente de NoSQL ou NewSQL</td></tr>
+      <tr><td><strong>Polystores</strong></td><td>Infraestrutura técnica que unifica o acesso a múltiplos sistemas: um <em>query engine</em> decompõe uma query em subqueries nativas de cada sistema; <em>wrappers</em> traduzem entre o formato unificado e o nativo de cada banco</td><td>Implementação técnica da persistência poliglota</td></tr>
+      <tr><td><strong>NewSQL</strong></td><td>Categoria de SGBDs que combinam SQL, ACID e escalabilidade horizontal</td><td>Categoria de sistemas — pode ou não incluir suporte a polystores</td></tr>
+    </table>
+    <p>Relação: polystores são uma <em>característica opcional</em> presente em alguns sistemas NewSQL (ex.: BigDAWG, SAP HANA). Mas persistência poliglota existe independentemente do NewSQL — você pode usar Redis + MongoDB + PostgreSQL juntos sem nenhum componente NewSQL. O NoSQL também se beneficia da ideia: a aplicação é que decide qual banco usar para cada tipo de dado.</p>
+    <p>Portanto: polystores fazem parte do ecossistema NewSQL como feature, mas não são sinônimos.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">8. Qual o melhor representante da categoria NewSQL e por quê?</p>
+  <div class="answer">
+    <p><strong>Google Spanner</strong> é o representante mais completo e academicamente relevante do NewSQL. Lançado internamente em 2007 e descrito em paper em 2012, foi pioneiro em combinar distribuição global, ACID e SQL.</p>
+    <p><strong>Por que é classificado como NewSQL:</strong></p>
+    <ul>
+      <li><strong>Modelo relacional com SQL</strong> — suporta Google Standard SQL com JOINs, transações e esquemas relacionais.</li>
+      <li><strong>ACID completo e distribuído globalmente</strong> — transações com isolamento serializável entre data centers em diferentes continentes.</li>
+      <li><strong>Escalabilidade horizontal linear</strong> — arquitetura <em>shared-nothing</em>; particionamento automático por intervalo de chave (<em>key-range splitting</em>) conforme o volume cresce.</li>
+      <li><strong>HTAP</strong> — suporta workloads transacionais (OLTP) e analíticos (OLAP) no mesmo sistema.</li>
+    </ul>
+    <p><strong>Como armazena os dados logicamente:</strong></p>
+    <ul>
+      <li>Tabelas relacionais com chave primária obrigatória.</li>
+      <li><strong>Interleaving</strong> — tabelas filho podem ser intercaladas fisicamente com as linhas pai, melhorando localidade de acesso para relacionamentos hierárquicos frequentes.</li>
+      <li>Particionamento automático por intervalo de chave; o sistema redistribui shards conforme o volume e o padrão de acesso.</li>
+      <li>Replicação síncrona baseada em <strong>Paxos</strong> entre zonas/regiões — maioria de votos confirma cada escrita.</li>
+    </ul>
+    <p><strong>Inovação central — TrueTime API:</strong></p>
+    <details>
+      <summary>O que é TrueTime?</summary>
+      <p>O Spanner usa hardware especializado (relógios GPS e atômicos) em cada data center para disponibilizar uma API de tempo global chamada <span class="term">TrueTime</span>. Em vez de retornar um instante exato, ela retorna um intervalo <code>[t_earliest, t_latest]</code> que garante conter o tempo real.</p>
+      <p>Isso permite ao Spanner atribuir timestamps causalmente corretos a transações globais sem precisar de comunicação adicional de coordenação: se o intervalo de uma transação A não se sobrepõe ao de B, o Spanner sabe com certeza qual aconteceu antes. Isso viabiliza serializable isolation global com latência muito menor que 2PC puro.</p>
+    </details>
+    <p><strong>Outras características:</strong></p>
+    <ul>
+      <li>Disponibilidade de 99,999% (cinco noves).</li>
+      <li><em>Snapshot reads</em> — leitura consistente de qualquer ponto no passado sem locks.</li>
+      <li>Amplamente adotado no Google (Ads, Gmail, Google Pay) e disponível como serviço gerenciado (Cloud Spanner).</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
 <hr>
 <p class="note center">BD2 — Resumo expandido com base nos slides da disciplina (2026/1). Prof. Sergio Serra — PPGI/UFRJ.</p>
+
+<script>
+  function toggleToc() {
+    document.getElementById('toc-panel').classList.toggle('open');
+  }
+  document.addEventListener('click', function(e) {
+    var float = document.getElementById('toc-float');
+    if (float && !float.contains(e.target)) {
+      document.getElementById('toc-panel').classList.remove('open');
+    }
+  });
+  document.querySelectorAll('#toc-panel a').forEach(function(link) {
+    link.addEventListener('click', function() {
+      document.getElementById('toc-panel').classList.remove('open');
+    });
+  });
+</script>
 
 </body>
 </html>
