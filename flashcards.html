@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards BD2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #07111A; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const C = {
+      bg: "#07111A", surface: "#0D1E2C", card: "#112030", border: "#1A3448",
+      text: "#DDD5C5", muted: "#5A7A90",
+      c0: "#89C4E1", c1: "#4A9FD4", c2: "#C9A84C", c3: "#E07A5F",
+      c4: "#8FAF6A", c5: "#B57BDE", c6: "#4AC9B0", c7: "#E09A3F",
+      good: "#50C878", bad: "#E05C5C",
+    };
+
+    const DECKS = [
+      {
+        id: "bigdata", label: "Big Data", icon: "📊", color: C.c0,
+        cards: [
+          { q: "Quais são os 6 V's do Big Data?", a: "Volume (quantidade), Velocidade (taxa de geração/processamento), Variedade (formatos), Veracidade (confiabilidade), Variabilidade (inconsistência no fluxo) e Valor (utilidade extraída)." },
+          { q: "Qual a diferença entre OLTP e OLAP?", a: "OLTP (Online Transaction Processing): muitas escritas e leituras pontuais e curtas — ex: sistema de caixa. OLAP (Online Analytical Processing): poucas consultas porém complexas, varrendo grandes volumes — ex: BI e data warehouse." },
+          { q: "Quais foram as duas motivações principais para o surgimento do NoSQL e NewSQL?", a: "1) Necessidade de maior desempenho em Big Data e Web 2.0. 2) Necessidade de maior flexibilidade no schema e no modelo de dados." },
+        ]
+      },
+      {
+        id: "nosql-geral", label: "NoSQL Geral", icon: "🗄️", color: C.c1,
+        cards: [
+          { q: "O que significa 'NoSQL' e quando surgiu?", a: "NoSQL significa 'Not Only SQL'. Surgiu para atender às demandas da Web moderna, Big Data e ambientes distribuídos. Não segue ACID — opera segundo o Teorema CAP." },
+          { q: "Liste as 8 características principais do NoSQL.", a: "1) Escalabilidade horizontal. 2) Schemaless. 3) Sem FKs nem transações multi-agregado. 4) API em vez de SQL. 5) Replicação mestre-escravo e P2P. 6) Sharding. 7) Orientado a agregados (exceto grafos). 8) Segue CAP e BASE." },
+          { q: "Quais são os 4 modelos de dados NoSQL e um exemplo de cada?", a: "Chave-Valor (Redis, DynamoDB). Documentos (MongoDB, CouchDB). Família de Colunas (HBase, Cassandra). Grafos (Neo4j). Todos exceto grafos são orientados a agregados." },
+          { q: "O que é um agregado no contexto NoSQL?", a: "Coleção de objetos relacionados tratada como uma única unidade de dados. É a unidade de atomicidade, replicação e particionamento. Reduz impedância com objetos da aplicação. Não há atomicidade entre múltiplos agregados." },
+          { q: "O que é impedância (impedance mismatch)?", a: "O esforço de mapear dados de tabelas relacionais para objetos da aplicação (classes, structs). Agregados NoSQL reduzem esse problema porque sua estrutura hierárquica (JSON/BSON) reflete diretamente os objetos." },
+          { q: "Cite 3 problemas dos agregados NoSQL.", a: "1) Sem integridade referencial (sem FK). 2) Opacidade — o banco não enxerga a estrutura interna. 3) Sem atomicidade entre múltiplos agregados. 4) Modelado conforme acesso — se o acesso mudar, o modelo pode tornar-se inadequado." },
+          { q: "Por que NoSQL escala melhor horizontalmente que SQL?", a: "Porque o modelo orientado a agregados elimina dependências: cada operação acessa um único agregado em um único nó — sem JOINs cross-nó, sem FKs, sem 2PC. Adicionar um nó distribui a carga de forma quase linear." },
+          { q: "NoSQL permite transações sobre múltiplos agregados?", a: "Em geral não — é uma escolha deliberada. Atomicidade se aplica a um único agregado. Exceção: MongoDB 4.0+ suporta multi-document ACID com custo de performance. Grafos (Neo4j) suportam ACID completo por não serem orientados a agregados." },
+        ]
+      },
+      {
+        id: "distribuicao", label: "Distribuição", icon: "🌐", color: C.c2,
+        cards: [
+          { q: "Qual a diferença entre Fragmentação (Sharding) e Replicação?", a: "Sharding: dados DIFERENTES em nós diferentes — distribui carga. Replicação: os MESMOS dados em múltiplos nós — aumenta disponibilidade. Podem ser combinadas." },
+          { q: "Quais são os 4 princípios de fragmentação de agregados NoSQL?", a: "1) Localidade geográfica — dados onde são consumidos. 2) Equilíbrio de carga — distribuição da sobrecarga. 3) Fragmentação lógica — aplicação define distribuição. 4) Autofragmentação nativa — banco gerencia automaticamente." },
+          { q: "Compare replicação Mestre-Escravo vs. P2P.", a: "Mestre-Escravo: um nó recebe escritas, escravos servem leituras. Simples, mas mestre é gargalo. P2P: todos os nós iguais, qualquer nó aceita leitura e escrita. Sem ponto único de falha, mas conflitos escrita-escrita são mais prováveis." },
+          { q: "Qual a diferença entre propagação síncrona e assíncrona na replicação mestre-escravo?", a: "Síncrona: mestre aguarda confirmação de todos os escravos antes do commit — consistente, mas maior latência. Assíncrona: mestre confirma sem esperar — menor latência, mas aceita consistência eventual (escravos podem retornar dados antigos)." },
+          { q: "Por que a opacidade do agregado é um problema para fragmentação inteligente?", a: "O banco não enxerga a estrutura interna (só a chave). Não consegue fragmentar por conteúdo (ex: todos clientes do RJ num nó). A localidade geográfica depende de como a aplicação define a chave. Índices secundários 'quebram' essa opacidade." },
+        ]
+      },
+      {
+        id: "cap-base", label: "CAP & BASE", icon: "⚖️", color: C.c3,
+        cards: [
+          { q: "O que afirma o Teorema CAP (Brewer, 2000)?", a: "Um sistema distribuído só pode garantir 2 das 3 propriedades ao mesmo tempo: Consistência (C) — todos veem os mesmos dados; Disponibilidade (A) — nós ativos sempre respondem; Tolerância a Partições (P) — funciona mesmo com falhas de rede." },
+          { q: "O que é 'split brain' em sistemas distribuídos?", a: "Quando uma falha de rede divide o cluster em grupos que não se comunicam. Cada grupo continua atendendo de forma independente, podendo gerar versões divergentes dos mesmos dados. É um dos problemas mais graves em sistemas distribuídos." },
+          { q: "Classifique: CP, AP e CA no teorema CAP com exemplos.", a: "CP (Consistência + Partição): sacrifica disponibilidade em partição. Ex: MongoDB, HBase. AP (Disponibilidade + Partição): retorna dados possivelmente desatualizados. Ex: Cassandra, DynamoDB. CA: consistente e disponível, mas sem tolerância a partições — só funciona em servidor único. Ex: SGBDr clássicos." },
+          { q: "O que significa cada letra de BASE?", a: "BA — Basically Available: disponibilidade garantida via replicação, mesmo que dados estejam ligeiramente desatualizados. S — Soft State: estado pode mudar sem novas entradas, pela propagação de réplicas. E — Eventually Consistent: o sistema convergirá para um estado consistente eventualmente." },
+          { q: "Qual a diferença entre Consistência no ACID e Consistência no CAP?", a: "ACID: banco sempre vai de um estado válido a outro (integridade — constraints, FKs, regras de negócio). CAP: todos os nós retornam o mesmo valor ao mesmo tempo (sincronismo entre réplicas). São conceitos distintos com o mesmo nome." },
+          { q: "Quais são os dois tipos de conflito em sistemas distribuídos sem ACID?", a: "Escrita-escrita: dois clientes escrevem no mesmo agregado simultaneamente. Leitura-escrita: cliente lê dado inconsistente enquanto outro nó ainda está sendo atualizado (devido a latência ou falha de rede)." },
+          { q: "Qual a diferença entre estratégia pessimista e otimista para conflitos?", a: "Pessimista: previne conflito antecipadamente — bloqueia o agregado (lock) ou guarda as duas versões para decisão posterior. Otimista: assume que conflitos são raros — detecta e trata após o fato." },
+        ]
+      },
+      {
+        id: "modelos", label: "Modelos NoSQL", icon: "📦", color: C.c4,
+        cards: [
+          { q: "Quais são as características do modelo Chave-Valor?", a: "Valor armazenado como BLOB (opaco — banco não vê estrutura interna). Acesso apenas pela chave (sem índices secundários). Altamente particionável. Implementado como tabela hash. Máxima escalabilidade horizontal. Ex: Redis, DynamoDB." },
+          { q: "O que diferencia o modelo de Documentos do Chave-Valor?", a: "Documentos (JSON/BSON/XML) são estruturados — o banco enxerga a estrutura interna. Permite índices secundários sobre campos. Permite recuperar partes do documento. Documentos na mesma coleção podem ter estruturas distintas. Ex: MongoDB, CouchDB." },
+          { q: "O que é uma supercoluna e uma família de colunas?", a: "Supercoluna: contêiner para outras colunas. Família de colunas: grupo de colunas geralmente acessadas juntas (como uma 'tabela larga'). Diferentes linhas podem ter colunas diferentes. Divisão de linhas por faixa (range-based), não hash. Ex: HBase, Cassandra." },
+          { q: "O que diferencia Grafos dos demais modelos NoSQL?", a: "Não são orientados a agregados. Suportam ACID completo (inclusive transações). Relacionamentos já persistidos — travessia O(1) sem JOINs. Problema: fragmentação difícil (dados ficam em um único nó). Dois tipos: Propriedades (Neo4j, Cypher) e RDF (Virtuoso, SPARQL)." },
+          { q: "Qual a diferença entre Cypher e SPARQL?", a: "Cypher: linguagem declarativa para grafos de propriedades (Neo4j). Ex: MATCH (p:Pessoa)-[:AMIGO_DE]->(a) RETURN a.nome. SPARQL: linguagem para dados RDF (triplas sujeito-predicado-objeto). Ex: SELECT ?nome WHERE { ?p rdf:type :Pessoa ; :nome ?nome }." },
+          { q: "Como funcionam relacionamentos no NoSQL sem chaves estrangeiras?", a: "3 abordagens: 1) Embedding (desnormalização) — dado embutido dentro do agregado, uma consulta retorna tudo. 2) Referências manuais — armazena o ID do relacionado; aplicação faz segunda consulta. 3) Bancos de grafos — aresta explícita como cidadã de primeira classe." },
+          { q: "O que é MapReduce e qual seu pipeline?", a: "Modelo para processamento distribuído em Big Data (Google, 2004). Pipeline: Entrada (DFS) → MAP (cada item gera pares <chave,valor>) → SORT/SHUFFLE (agrupa por chave) → REDUCE (produz valor de saída por grupo) → Saída (DFS). Frameworks: Hadoop, Spark." },
+        ]
+      },
+      {
+        id: "polystores", label: "Polystores", icon: "🔗", color: C.c5,
+        cards: [
+          { q: "O que é persistência poliglota?", a: "Arquitetura que usa diferentes sistemas de armazenamento para diferentes partes de uma aplicação, escolhendo o banco mais adequado para cada problema. Ex: Redis para cache, MongoDB para catálogo, PostgreSQL para pedidos." },
+          { q: "O que é um Polystore e como funciona?", a: "Sistema que integra múltiplos bancos heterogêneos sob interface unificada. Query Engine decompõe a query (Q) em subconsultas (SQ). Wrappers traduzem cada SQ para a linguagem nativa (Q') do banco destino. Exemplos: PolyBase, SparkSQL, CloudMDSQL." },
+          { q: "Qual a relação entre persistência poliglota e NewSQL?", a: "Polystores são uma característica opcional em alguns sistemas NewSQL (ex: SAP HANA). Mas persistência poliglota existe independentemente — você pode usar Redis + MongoDB + PostgreSQL sem nenhum NewSQL. São conceitos distintos: um é arquitetural, outro é categoria de sistema." },
+          { q: "Por que 'não existe o esperanto nos SGBDs' (Stonebraker)?", a: "Nenhum SGBD único resolve todos os problemas de forma eficiente. Integração, ETL, movimentação e curadoria de dados entre sistemas diferentes são caros. Cada banco é otimizado para seu caso de uso — daí a necessidade dos Polystores." },
+        ]
+      },
+      {
+        id: "newsql", label: "NewSQL", icon: "⚡", color: C.c6,
+        cards: [
+          { q: "O que é NewSQL e o que ele resolve?", a: "Categoria de SGBDs que combina SQL + ACID + escalabilidade horizontal. Resolve o dilema: SQL tem ACID mas não escala horizontalmente; NoSQL escala mas perde ACID. NewSQL suporta OLTP + OLAP + HTAP simultaneamente." },
+          { q: "Cite as técnicas exclusivas do NewSQL (que não vêm do SQL nem do NoSQL).", a: "Gerenciamento escalável de transações. Polystores e IMDBs integrados nativamente. Acesso unificado via SQL, NoSQL e HDFS. Processamento HTAP (OLTP + OLAP simultâneos)." },
+          { q: "O que é HTAP e qual problema ele resolve?", a: "Hybrid Transactional and Analytical Processing: OLTP e OLAP simultâneos no mesmo sistema. Resolve o custo de ETL/ELT (~75% do processo de analytics), a latência de dados legados e elimina ambientes separados. Definido pelo Gartner em 2014." },
+          { q: "Qual o trade-off central do HTAP?", a: "Tensão entre isolamento de carga (separar OLTP e OLAP para não prejudicar um ao outro) e data freshness (OLAP ver os dados mais recentes do OLTP). Alto isolamento → baixa atualização. Baixo isolamento → alta atualização." },
+          { q: "Quais são as 5 dimensões da taxonomia NewSQL (Özsu & Valduriez)?", a: "1) Modelo de transação (Ad hoc / Conhecimento a priori / ACID completo). 2) Escalabilidade (Limitada / Logarítmica / Linear). 3) Armazenamento (Relacional / Chave-Valor). 4) Paralelismo (Inter-query / Intra inter-operator / Intra intra-operator). 5) Suporte a Polystores." },
+          { q: "Quais são os 3 tipos de paralelismo de consultas no NewSQL?", a: "Inter-query: múltiplas consultas diferentes em paralelo. Intra-query inter-operator: operadores diferentes do plano de consulta em nós diferentes. Intra-query intra-operator: o mesmo operador em múltiplos nós simultaneamente." },
+          { q: "O que é cluster failover?", a: "Processo automático pelo qual o cluster detecta falha de um nó e redireciona o tráfego para nós saudáveis sem interrupção. No NewSQL, implementado via replicação síncrona: o nó substituto já tem cópia atualizada." },
+          { q: "O que é ETL e o que é ELT?", a: "ETL: extrai, transforma e carrega — transformação antes da carga, ex: data warehouse. ELT: extrai, carrega e transforma — dados carregados crus, transformação depois no próprio destino, ex: data lakes em cloud. ETL/ELT custam ~75% do processo de analytics." },
+          { q: "Por que o Google Spanner é o melhor representante do NewSQL?", a: "Combina: SQL + ACID com serializable isolation global. Escalabilidade horizontal linear (shared-nothing). HTAP. TrueTime API (relógios GPS/atômicos) para timestamps causalmente corretos sem 2PC adicional. 99,999% de disponibilidade. Replicação via Paxos." },
+        ]
+      },
+      {
+        id: "imdb", label: "In-Memory DB", icon: "💾", color: C.c7,
+        cards: [
+          { q: "O que é um IMDB e qual sua definição?", a: "SGBD do tipo NewSQL que mantém dados permanentemente na RAM, eliminando o gargalo de I/O do armazenamento secundário. Vantagens: baixíssima latência, insights em tempo real, HTAP. Desvantagens: volatilidade, custo da RAM, complexidade." },
+          { q: "Qual a diferença entre Hot Data e Cold Data nos IMDBs?", a: "Hot Data (RAM): dados de missão crítica, acessados frequentemente, recentes — OLTP. Cold Data (HD/SSD): dados históricos, estáticos, acesso raro — OLAP. A solução é classificar dados e definir critérios de transferência com logging/checkpoints para persistência." },
+          { q: "Qual a diferença entre NSM e DSM nos IMDBs?", a: "NSM (N-ary Storage Model / orientado a linhas): atributos de um registro armazenados contiguamente — ideal para OLTP (acessa todos atributos de um registro). DSM (Decomposition Storage Model / orientado a colunas): valores de um atributo de todos os registros contiguamente — ideal para OLAP e compressão." },
+          { q: "Como funciona o versionamento de dados (shadow versioning) nos IMDBs?", a: "1) Modificação não sobrescreve o original na RAM — cria shadow version em endereço diferente. 2) Ao confirmar, shadow version torna-se versão atual. 3) Versão anterior fica até ser removida pelo garbage collection. Facilita MVCC e criação de snapshots." },
+          { q: "O que é MVCC e quais suas duas variantes nos IMDBs?", a: "Multiversion Concurrency Control: mantém múltiplas versões de um dado simultaneamente. Leituras nunca bloqueiam escritas. Variantes: Otimista (Hekaton, HyPer) — sem lock, conflito verificado no commit, perdedores são abortados. Pessimista (SAP HANA) — MVCC para leitura + locks de registro para escrita." },
+          { q: "Quais são as 3 estratégias de recuperação de falhas nos IMDBs?", a: "Logging: registra operações em disco continuamente. 3 tipos: operação (Hekaton, HANA), transação (VoltDB, HyPer), valor (SiloR). Checkpoint: snapshot completo em disco. Tipos: Naive (pausa o sistema), ZigZag, Piggyback. Recovery: restaura banco do último checkpoint + logs subsequentes." },
+          { q: "Compare as estratégias de logging/checkpoint dos principais IMDBs.", a: "Hekaton: log de operação + versões de dados. VoltDB: log de transação + snapshot. HyPer: log de transação + snapshot. SAP HANA: log de operação + snapshot. SiloR: log de valor + snapshot fuzzy. Todos usam recovery padrão (snapshot + log)." },
+          { q: "O que é indexação nos IMDBs e que tipos são usados?", a: "Dados em blocos/páginas em memória (não frames de disco). Índices do tipo Hash (O(1), sem range queries) ou T-Tree (árvore balanceada otimizada para RAM, similar à B-Tree para disco — permite busca por intervalo). Uso de checksum para detectar corrupção em memória." },
+          { q: "O que é particionamento nos IMDBs e sua desvantagem?", a: "Divide o BD em partições disjuntas e independentes (H-Store, VoltDB, Calvin). Transações executam em paralelo por partição. IMDBs com particionamento frequentemente não implementam controle de concorrência — transações seriais dentro de cada partição. Desvantagem: Tx cross-partition espera todas as partições disponíveis." },
+          { q: "O que é Snapshot Isolation?", a: "Nível de isolamento onde cada transação enxerga um snapshot consistente do banco do momento em que iniciou. Novas escritas de outras transações não afetam a visão atual. Implementado via MVCC. Não é equivalente à serialização completa — pode permitir write skew." },
+        ]
+      },
+      {
+        id: "termos", label: "Termos-Chave", icon: "📖", color: C.c3,
+        cards: [
+          { q: "O que é Shared-Nothing?", a: "Arquitetura de cluster onde cada nó tem sua própria memória e disco, sem compartilhamento de recursos. Facilita escalabilidade linear — adicionar nós não cria contenção. Usado no Spanner e em sistemas NewSQL com escalabilidade linear." },
+          { q: "O que é 2PC (Two-Phase Commit)?", a: "Protocolo para garantir que uma transação distribuída seja commitada ou abortada atomicamente em todos os nós. Fase 1: coordenador pede voto. Fase 2: se todos votarem 'sim', confirma; senão aborta. Problema: se o coordenador falhar, participantes ficam bloqueados." },
+          { q: "O que é ROWA (Read-One Write-All)?", a: "Protocolo de replicação: qualquer nó pode servir leituras, mas escritas devem ser propagadas a todos os nós antes de confirmar. Escala bem em leitura, mas não em escrita." },
+          { q: "O que é um DFS (Distributed File System)?", a: "Sistema de arquivos que armazena arquivos fragmentados em múltiplos servidores com replicação automática. HDFS (Hadoop DFS) divide arquivos em blocos (tipicamente 128 MB) distribuídos entre nós. Base do ecossistema Big Data." },
+          { q: "O que é SIMD e por que importa nos IMDBs?", a: "Single Instruction Multiple Data: extensão de CPU que executa a mesma operação em múltiplos dados com uma única instrução. Ex: somar 8 pares de inteiros com um opcode. Fundamental para IMDBs processando grandes vetores de dados na RAM em alta velocidade." },
+          { q: "O que é NUMA e qual seu impacto nos IMDBs?", a: "Non-Uniform Memory Access: arquitetura multi-CPU onde cada CPU acessa sua memória local mais rápido que a de outras CPUs. IMDBs devem minimizar acessos cross-NUMA priorizando localidade dos dados para evitar degradação de performance." },
+          { q: "O que é uma Stored Procedure compilada e onde é usada?", a: "Procedimento SQL pré-compilado no banco. IMDBs como VoltDB compilam stored procedures em código de máquina nativo, eliminando o overhead do interpretador SQL. Desvantagem: banco precisa conhecer as transações antecipadamente — ruim para workloads ad hoc." },
+          { q: "O que é TrueTime (Google Spanner) e por que é inovador?", a: "API de tempo global usando relógios GPS e atômicos. Retorna um intervalo [t_earliest, t_latest] que contém o tempo real. Permite atribuir timestamps causalmente corretos a transações globais sem coordenação adicional — viabiliza serializable isolation global com baixa latência." },
+        ]
+      },
+    ];
+
+    function MonoLabel({ children, color }) {
+      return (
+        <div style={{ color: color || C.muted, fontSize: 10, letterSpacing: 2, textTransform: "uppercase", fontFamily: "monospace", marginBottom: 6 }}>
+          {children}
+        </div>
+      );
+    }
+
+    function FlashCardControlled({ card, index, color, forceOpen }) {
+      const [localFlipped, setLocalFlipped] = useState(false);
+      const isFlipped = forceOpen || localFlipped;
+
+      return (
+        <div
+          onClick={() => setLocalFlipped(!localFlipped)}
+          style={{
+            background: isFlipped ? `${color}14` : C.surface,
+            border: `1px solid ${isFlipped ? color : C.border}`,
+            borderRadius: 10, padding: "14px 16px", marginBottom: 8,
+            cursor: "pointer", transition: "all 0.2s",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <span style={{ color, fontFamily: "monospace", fontSize: 11, fontWeight: 700, marginRight: 8 }}>
+                #{String(index + 1).padStart(2, "0")}
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{card.q}</span>
+            </div>
+            <span style={{ color, fontFamily: "monospace", fontSize: 13, flexShrink: 0, marginTop: 1 }}>
+              {isFlipped ? "▲" : "▼"}
+            </span>
+          </div>
+          {!isFlipped && (
+            <p style={{ fontSize: 11, color: C.muted, marginTop: 6, fontStyle: "italic", fontFamily: "monospace", marginBottom: 0 }}>
+              clique para revelar →
+            </p>
+          )}
+          {isFlipped && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${color}33`, fontSize: 13, color: "#8AAABB", lineHeight: 1.75 }}>
+              {card.a}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function App() {
+      const [activeDeck, setActiveDeck] = useState("bigdata");
+      const [showAll, setShowAll] = useState(false);
+
+      const deck = DECKS.find(d => d.id === activeDeck);
+      const totalCards = DECKS.reduce((s, d) => s + d.cards.length, 0);
+
+      return (
+        <div style={{ fontFamily: "'Palatino Linotype', Georgia, serif", background: C.bg, minHeight: "100vh", color: C.text, paddingBottom: 60 }}>
+
+          {/* Header */}
+          <div style={{ background: "linear-gradient(160deg, #05080F 0%, #0A1525 50%, #050810 100%)", borderBottom: `1px solid ${C.border}`, padding: "32px 24px 22px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, letterSpacing: 5, color: C.muted, textTransform: "uppercase", marginBottom: 10, fontFamily: "monospace" }}>
+              Banco de Dados II · <a href="index.html" style={{ color: C.muted, textDecoration: "none" }}>← resumo</a>
+            </div>
+            <h1 style={{ fontSize: "clamp(18px, 4vw, 28px)", fontWeight: 700, color: "#F5EDE0", margin: "0 0 6px" }}>
+              Flashcards — Revisão Completa BD2
+            </h1>
+            <p style={{ color: "#4A7090", fontSize: 13, margin: "0 0 20px", fontStyle: "italic" }}>
+              {DECKS.length} temas · {totalCards} flashcards · baseado nas notas da disciplina
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              {[
+                { label: "Decks", val: DECKS.length, color: C.c1 },
+                { label: "Flashcards", val: totalCards, color: C.c4 },
+                { label: "Tópicos", val: "NoSQL·NewSQL·IMDB", color: C.c2 },
+              ].map((s, i) => (
+                <div key={i} style={{ background: `${s.color}18`, border: `1px solid ${s.color}44`, borderRadius: 8, padding: "7px 14px", textAlign: "center" }}>
+                  <div style={{ color: s.color, fontSize: i < 2 ? 20 : 13, fontWeight: 700 }}>{s.val}</div>
+                  <div style={{ color: C.muted, fontSize: 11, fontFamily: "monospace" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ maxWidth: 820, margin: "0 auto", padding: "20px 16px 0" }}>
+
+            {/* Deck tabs */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 6, marginBottom: 20 }}>
+              {DECKS.map(d => (
+                <button key={d.id} onClick={() => { setActiveDeck(d.id); setShowAll(false); }} style={{
+                  background: activeDeck === d.id ? `${d.color}20` : C.surface,
+                  border: `1px solid ${activeDeck === d.id ? d.color : C.border}`,
+                  borderRadius: 9, padding: "10px 6px", cursor: "pointer",
+                  fontFamily: "inherit", textAlign: "center", transition: "all 0.2s",
+                }}>
+                  <div style={{ fontSize: 17, marginBottom: 3 }}>{d.icon}</div>
+                  <div style={{ color: activeDeck === d.id ? d.color : C.muted, fontSize: 9, fontFamily: "monospace", letterSpacing: 1, marginBottom: 2, textTransform: "uppercase" }}>{d.cards.length} cards</div>
+                  <div style={{ color: activeDeck === d.id ? "#C0D4E4" : "#4A6A7A", fontSize: 10, lineHeight: 1.3, fontWeight: activeDeck === d.id ? 600 : 400 }}>{d.label}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Deck header */}
+            <div style={{ borderBottom: `1px solid ${deck.color}55`, paddingBottom: 10, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 22 }}>{deck.icon}</span>
+                <div>
+                  <h2 style={{ color: deck.color, fontSize: 17, fontWeight: 700, margin: 0 }}>{deck.label}</h2>
+                  <p style={{ color: C.muted, fontSize: 11, margin: 0, fontFamily: "monospace" }}>{deck.cards.length} flashcards neste deck</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAll(!showAll)}
+                style={{ background: `${deck.color}18`, border: `1px solid ${deck.color}44`, color: deck.color, borderRadius: 7, padding: "5px 12px", cursor: "pointer", fontSize: 12, fontFamily: "monospace" }}
+              >
+                {showAll ? "▲ recolher" : "▼ revelar todos"}
+              </button>
+            </div>
+
+            {/* Cards */}
+            {deck.cards.map((card, i) => (
+              <FlashCardControlled key={i} card={card} index={i} color={deck.color} forceOpen={showAll} />
+            ))}
+
+            {/* Progress bar */}
+            <div style={{ marginTop: 20, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px" }}>
+              <MonoLabel color={C.muted}>Progresso por deck</MonoLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {DECKS.map(d => {
+                  const pct = Math.round((d.cards.length / totalCards) * 100);
+                  return (
+                    <div key={d.id} onClick={() => { setActiveDeck(d.id); setShowAll(false); }} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                      <span style={{ fontSize: 13 }}>{d.icon}</span>
+                      <span style={{ fontSize: 11, color: activeDeck === d.id ? d.color : C.muted, fontFamily: "monospace", width: 100, flexShrink: 0 }}>{d.label}</span>
+                      <div style={{ flex: 1, background: C.border, borderRadius: 4, height: 6, overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, background: d.color, height: "100%", borderRadius: 4, opacity: activeDeck === d.id ? 1 : 0.45 }} />
+                      </div>
+                      <span style={{ fontSize: 11, color: C.muted, fontFamily: "monospace", width: 30, textAlign: "right", flexShrink: 0 }}>{d.cards.length}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Dica */}
+            <div style={{ marginTop: 12, background: "#0A1A10", border: "1px solid #2A5A34", borderRadius: 10, padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
+              <p style={{ fontSize: 13, color: "#7ABA8A", lineHeight: 1.6, margin: 0 }}>
+                Estratégia recomendada: percorra os decks na ordem — Big Data → NoSQL → Distribuição → CAP/BASE → Modelos → Polystores → NewSQL → IMDB → Termos. Clique em "revelar todos" para revisar rápido ou teste card a card para memorizar.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
