@@ -1058,6 +1058,69 @@ Arquitetura HTAP:
   </div>
 </div>
 
+<div class="qa-item">
+  <p class="question">9. Escolha o melhor representante da categoria de IMDBs e explique por que é classificado como NewSQL, como armazena os dados logicamente e outras características.</p>
+  <div class="answer">
+    <p><strong>VoltDB</strong> é o representante mais didaticamente completo dos IMDBs NewSQL — nasceu diretamente de pesquisa acadêmica (projeto H-Store, MIT/Brown/Yale) e incorpora as decisões de design mais radicais do paradigma.</p>
+    <p><strong>Por que é classificado como NewSQL:</strong></p>
+    <ul>
+      <li><strong>SQL completo e ACID</strong> — suporta DDL/DML padrão com transações serializáveis e durabilidade garantida.</li>
+      <li><strong>Escalabilidade horizontal linear</strong> — arquitetura <em>shared-nothing</em>; cada nó carrega uma partição dos dados e processa independentemente. Adicionar nós escala throughput de forma quase linear.</li>
+      <li><strong>In-memory</strong> — todos os dados residem na RAM, eliminando I/O de disco no caminho quente das transações.</li>
+      <li><strong>HTAP leve</strong> — suporta workload OLTP de alta frequência; para OLAP, exporta snapshots para sistemas analíticos externos.</li>
+    </ul>
+    <p><strong>Como armazena os dados logicamente:</strong></p>
+    <ul>
+      <li>Tabelas relacionais particionadas horizontalmente por uma <strong>chave de partição</strong> definida no esquema. Cada partição reside em um único nó (e em sua réplica).</li>
+      <li>Dentro de cada partição, os dados são organizados em <strong>NSM (orientado a linhas)</strong> — adequado para OLTP que acessa registros completos.</li>
+      <li><strong>Thread única por partição</strong> — cada partição é gerenciada por uma única thread, executando transações serialmente dentro dela. Isso elimina a necessidade de locks e MVCC dentro da partição.</li>
+    </ul>
+    <p><strong>Processamento de consultas:</strong></p>
+    <ul>
+      <li>Transações são definidas como <strong>stored procedures pré-compiladas</strong> em código de máquina nativo. O banco precisa conhecer as queries com antecedência — não é ideal para workloads ad hoc.</li>
+      <li>Transações que tocam apenas uma partição são executadas localmente sem coordenação. Transações multi-partição usam 2PC, com overhead de latência.</li>
+    </ul>
+    <p><strong>Durabilidade (dados em RAM são voláteis):</strong></p>
+    <ul>
+      <li><strong>Log de transação</strong> escrito em disco a cada commit.</li>
+      <li><strong>Snapshots</strong> periódicos do estado completo do banco em disco.</li>
+      <li>Recovery: carrega o último snapshot + aplica os logs subsequentes de volta na RAM.</li>
+    </ul>
+    <p><strong>Limitações:</strong> o tamanho máximo do banco é limitado pela RAM disponível no cluster; transações ad hoc e JOINs complexos entre partições têm custo elevado; não é adequado para OLAP pesado.</p>
+  </div>
+</div>
+
+<div class="qa-item">
+  <p class="question">10. Qual a relação entre IMDBs e NewSQL? São a mesma coisa? Um faz parte do outro?</p>
+  <div class="answer">
+    <p>IMDBs são uma <strong>subcategoria</strong> do NewSQL — e não o inverso. A relação é de subconjunto, com condições:</p>
+    <table>
+      <tr><th></th><th>NewSQL</th><th>IMDB</th></tr>
+      <tr><td><strong>Definição</strong></td><td>Sistemas que combinam SQL + ACID + escalabilidade horizontal</td><td>Sistemas que mantêm os dados permanentemente na RAM, eliminando I/O de disco</td></tr>
+      <tr><td><strong>Armazenamento</strong></td><td>Pode ser em disco, memória ou híbrido</td><td>Primariamente na RAM (dados quentes); dados frios podem ir para disco</td></tr>
+      <tr><td><strong>Exemplos NewSQL não-IMDB</strong></td><td>Google Spanner, CockroachDB (usam disco)</td><td>—</td></tr>
+      <tr><td><strong>Exemplos IMDB não-NewSQL</strong></td><td>—</td><td>Redis, Memcached (sem SQL nem ACID completo)</td></tr>
+      <tr><td><strong>Exemplos IMDB + NewSQL</strong></td><td>VoltDB, SAP HANA, Hekaton</td><td>VoltDB, SAP HANA, Hekaton</td></tr>
+    </table>
+    <p>A relação pode ser visualizada assim:</p>
+    <div class="diagram">  ┌──────────────────────────────────────────┐
+  │               NewSQL                     │
+  │                                          │
+  │   ┌──────────────────────┐               │
+  │   │   IMDB + NewSQL      │  Spanner      │
+  │   │   VoltDB, SAP HANA   │  CockroachDB  │
+  │   │   Hekaton            │  (disco)      │
+  │   └──────────────────────┘               │
+  └──────────────────────────────────────────┘
+
+  ┌──────────────────┐
+  │  IMDB não-NewSQL │  Redis, Memcached
+  │  (sem SQL/ACID)  │  (chave-valor em memória)
+  └──────────────────┘</div>
+    <p><strong>Conclusão:</strong> todo IMDB que possui SQL, ACID e escalabilidade horizontal é NewSQL — mas nem todo NewSQL é IMDB (pode usar disco) e nem todo IMDB é NewSQL (pode não ter SQL nem ACID). Na taxonomia do curso, IMDBs aparecem como um dos "sabores" do NewSQL (<em>"in-memory: otimizados para processamento/armazenamento em memória"</em>), confirmando a relação de subconjunto.</p>
+  </div>
+</div>
+
 <!-- ============================================================ -->
 <hr>
 <p class="note center">BD2 — Resumo expandido com base nos slides da disciplina (2026/1). Prof. Sergio Serra — PPGI/UFRJ.</p>
